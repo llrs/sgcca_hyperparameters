@@ -1,0 +1,151 @@
+---
+title: "tau"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE, cache=TRUE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = FALSE)
+library("RGCCA")
+library("gliomaData")
+library("ggplot2")
+library("patchwork")
+theme_set(theme_bw())
+```
+
+# Introduction
+
+Prepare the data
+
+```{r prepare}
+# Load data ####
+data(ge_cgh_locIGR, package = "gliomaData")
+A <- ge_cgh_locIGR$multiblocks
+Loc <- factor(ge_cgh_locIGR$y)
+levels(Loc) <- colnames(ge_cgh_locIGR$multiblocks$y)
+ncomp <- rep(1, length(A))
+# rgcca algorithm using the dual formulation for X1 and X2 
+# and the dual formulation for X3
+A[[3]] = A[[3]][, -3]
+C <-  matrix(c(0, 0, 1, 0, 0, 1, 1, 1, 0), 3, 3)
+dimnames(C) <- list(names(A), names(A))
+C
+```
+
+# Preparing the taus
+
+You can also embed plots, for example:
+
+```{r taus}
+# Testing the tau effect on the AVE ####
+(min_shrinkage <- sapply(A, function(x) {
+  1 / sqrt(ncol(x))
+}))
+taus <- lapply(min_shrinkage, seq, to = 1, length.out = 10)
+taus.combn <- expand.grid(taus)
+keep <- apply(taus.combn, 1, function(x){sum(x != 0)})
+taus.combn <- taus.combn[keep >= 2, ]
+# Add the default value (per examples)
+taus.combn <- rbind(taus.combn, c(.071,.2, 1))
+head(taus.combn)
+```
+
+# Calculate the AVE values
+
+We iterate over the list of taus
+
+```{r centroid}
+out <- sapply(seq_len(nrow(taus.combn)), function(x){
+  result.sgcca <- sgcca(A, C, c1 = taus.combn[x, ], ncomp = ncomp, 
+                        scheme = "centroid", verbose = FALSE)
+  unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
+})
+centroid <- cbind.data.frame(t(out), taus.combn)
+```
+
+
+```{r factorial}
+out <- sapply(seq_len(nrow(taus.combn)), function(x){
+  result.sgcca <- sgcca(A, C, c1 = taus.combn[x, ], ncomp = ncomp, 
+                        scheme = "factorial", verbose = FALSE)
+  unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
+})
+factorial <- cbind.data.frame(t(out), taus.combn)
+```
+
+
+```{r horst}
+out <- sapply(seq_len(nrow(taus.combn)), function(x){
+  result.sgcca <- sgcca(A, C, c1 = taus.combn[x, ], ncomp = ncomp, 
+                        scheme = "horst", verbose = FALSE)
+  unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
+})
+horst <- cbind.data.frame(t(out), taus.combn)
+```
+
+# Plot the result
+
+```{r plot.centroid}
+p <- ggplot(centroid)
+p1 <- p + geom_point(aes(GE, AVE_inner, col = "inner")) + ylab("AVE") +
+  geom_smooth(aes(GE, AVE_inner, col = "inner")) +
+  geom_smooth(aes(GE, AVE_outer, col = "outer")) +
+  geom_point(aes(GE, AVE_outer, col = "outer")) + guides(col = FALSE)
+p2 <- p + geom_point(aes(CGH, AVE_inner, col = "inner")) + ylab("") +
+  geom_smooth(aes(CGH, AVE_inner, col = "inner")) +
+  geom_smooth(aes(CGH, AVE_outer, col = "outer")) +
+  geom_point(aes(CGH, AVE_outer, col = "outer")) + guides(col = FALSE)
+p3 <- p + geom_point(aes(y, AVE_inner, col = "inner")) + ylab("") +
+  geom_smooth(aes(y, AVE_inner, col = "inner")) +
+  geom_smooth(aes(y, AVE_outer, col = "outer")) +
+  geom_point(aes(y, AVE_outer, col = "outer")) + labs(col = 'AVE type') 
+
+q <- p + geom_count(aes(AVE_outer, AVE_inner)) + 
+  xlab("AVE outer") + ylab("AVE inner")
+
+(p1 + p2 + p3) / (q)
+```
+
+```{r plot.factorial}
+p <- ggplot(factorial)
+p1 <- p + geom_point(aes(GE, AVE_inner, col = "inner")) + ylab("AVE") +
+  geom_smooth(aes(GE, AVE_inner, col = "inner")) +
+  geom_smooth(aes(GE, AVE_outer, col = "outer")) +
+  geom_point(aes(GE, AVE_outer, col = "outer")) + guides(col = FALSE)
+p2 <- p + geom_point(aes(CGH, AVE_inner, col = "inner")) + ylab("") +
+  geom_smooth(aes(CGH, AVE_inner, col = "inner")) +
+  geom_smooth(aes(CGH, AVE_outer, col = "outer")) +
+  geom_point(aes(CGH, AVE_outer, col = "outer")) + guides(col = FALSE)
+p3 <- p + geom_point(aes(y, AVE_inner, col = "inner")) + ylab("") +
+  geom_smooth(aes(y, AVE_inner, col = "inner")) +
+  geom_smooth(aes(y, AVE_outer, col = "outer")) +
+  geom_point(aes(y, AVE_outer, col = "outer")) + labs(col = 'AVE type') 
+
+q <- p + geom_count(aes(AVE_outer, AVE_inner)) + 
+  xlab("AVE outer") + ylab("AVE inner")
+
+(p1 + p2 + p3) / (q)
+```
+
+```{r plot.horst}
+p <- ggplot(horst)
+p1 <- p + geom_point(aes(GE, AVE_inner, col = "inner")) + ylab("AVE") +
+  geom_smooth(aes(GE, AVE_inner, col = "inner")) +
+  geom_smooth(aes(GE, AVE_outer, col = "outer")) +
+  geom_point(aes(GE, AVE_outer, col = "outer")) + guides(col = FALSE)
+p2 <- p + geom_point(aes(CGH, AVE_inner, col = "inner")) + ylab("") +
+  geom_smooth(aes(CGH, AVE_inner, col = "inner")) +
+  geom_smooth(aes(CGH, AVE_outer, col = "outer")) +
+  geom_point(aes(CGH, AVE_outer, col = "outer")) + guides(col = FALSE)
+p3 <- p + geom_point(aes(y, AVE_inner, col = "inner")) + ylab("") +
+  geom_smooth(aes(y, AVE_inner, col = "inner")) +
+  geom_smooth(aes(y, AVE_outer, col = "outer")) +
+  geom_point(aes(y, AVE_outer, col = "outer")) + labs(col = 'AVE type') 
+
+q <- p + geom_count(aes(AVE_outer, AVE_inner)) + 
+  xlab("AVE outer") + ylab("AVE inner")
+
+(p1 + p2 + p3) / (q)
+```
+
