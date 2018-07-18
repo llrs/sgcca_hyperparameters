@@ -1,0 +1,56 @@
+---
+author: "Lluís Revilla Sancho"
+title: "SGCCA hyperparameters"
+date: "`r date()`"
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = FALSE, fig.width = 120, fig.height = 50, collapse = TRUE)
+library("RGCCA")
+```
+
+# Introduction
+
+This project page is to analyze the effect of some parameters on the sparse
+generalized canonical correlation analysis (SGCCA) from the [RGCCA](https://cran.r-project.org/package=RGCCA) package^[It doesn't use my slightly modified [version](https://github.com/llrs/RGCCA)].
+
+
+# Sections
+
+The arguments needed for a sgcca are:
+```{r}
+args(sgcca)
+```
+
+ - A
+ Is the input of the several blocks of variables to be related.
+ - **C**  
+ Is the design of the model, with more data more models can be used. For each model several weights can be used too. This is explored [here](weight.html)
+ - **c1**  
+ The regularizer parameter, also called tau in the RGCCA method. Its effect is explored [here](tau.html)
+ - **scheme**  
+ How are the several canonical correlations added up in the optimization function:
+    + horst  
+    The canonical correlation as is.
+    + centroid  
+    The absolute canonical correlation
+    + factorial  
+    The square of the canonical correlation
+    + free  
+    One can input any function
+ - scale  
+ Parameter to standarize to zero means and unit variance and divided by the square root of its number of variables.
+ - init  
+ Starting point for the optimization function, an be both `sva` and `random`
+ - bias  
+ Use biaised or unbiaised estimator of the variance and covariance
+ - tol  
+ Precision of the numeric approximation.
+ - verbose  
+ Prints messages along the calculation and plots the optimization approach.
+ 
