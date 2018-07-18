@@ -1,12 +1,16 @@
 ---
-title: "tau"
-output: html_document
-editor_options: 
-  chunk_output_type: console
+title: "tau optimization"
+author: "Lluís Revilla Sancho"
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+date: "`r date()`"
 ---
 
 ```{r setup, include=FALSE, cache=TRUE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = FALSE, fig.width = 120, fig.height = 50, collapse = TRUE)
 library("RGCCA")
 library("gliomaData")
 library("ggplot2")
@@ -35,10 +39,9 @@ C
 
 # Preparing the taus
 
-You can also embed plots, for example:
+Testing the tau effect on the AVE
 
 ```{r taus}
-# Testing the tau effect on the AVE ####
 (min_shrinkage <- sapply(A, function(x) {
   1 / sqrt(ncol(x))
 }))
@@ -46,7 +49,7 @@ taus <- lapply(min_shrinkage, seq, to = 1, length.out = 10)
 taus.combn <- expand.grid(taus)
 keep <- apply(taus.combn, 1, function(x){sum(x != 0)})
 taus.combn <- taus.combn[keep >= 2, ]
-# Add the default value (per examples)
+# Add the example values at the bottom
 taus.combn <- rbind(taus.combn, c(.071,.2, 1))
 head(taus.combn)
 ```
@@ -62,6 +65,7 @@ out <- sapply(seq_len(nrow(taus.combn)), function(x){
   unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
 })
 centroid <- cbind.data.frame(t(out), taus.combn)
+saveRDS(centroid, "centroid_tau.RDS")
 ```
 
 
@@ -72,6 +76,7 @@ out <- sapply(seq_len(nrow(taus.combn)), function(x){
   unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
 })
 factorial <- cbind.data.frame(t(out), taus.combn)
+saveRDS(factorial, "factorial_tau.RDS")
 ```
 
 
@@ -82,6 +87,11 @@ out <- sapply(seq_len(nrow(taus.combn)), function(x){
   unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
 })
 horst <- cbind.data.frame(t(out), taus.combn)
+saveRDS(horst, "horst_tau.RDS")
+library("dplyr")
+horst %>% 
+  # group_by(GE, CGH, y) %>% add_count() %>% 
+  filter(AVE_inner == max(AVE_inner))
 ```
 
 # Plot the result
@@ -147,5 +157,11 @@ q <- p + geom_count(aes(AVE_outer, AVE_inner)) +
   xlab("AVE outer") + ylab("AVE inner")
 
 (p1 + p2 + p3) / (q)
+```
+
+## Session Info {-}
+
+```{r session, echo=FALSE}
+devtools::session_info()
 ```
 
