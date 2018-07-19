@@ -65,6 +65,8 @@ out <- sapply(seq_len(nrow(taus.combn)), function(x){
   unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
 })
 centroid <- cbind.data.frame(t(out), taus.combn)
+centroid %>% 
+  filter(AVE_inner == max(AVE_inner))
 saveRDS(centroid, "centroid_tau.RDS")
 ```
 
@@ -76,6 +78,8 @@ out <- sapply(seq_len(nrow(taus.combn)), function(x){
   unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")])
 })
 factorial <- cbind.data.frame(t(out), taus.combn)
+factorial %>% 
+  filter(AVE_inner == max(AVE_inner))
 saveRDS(factorial, "factorial_tau.RDS")
 ```
 
@@ -90,7 +94,6 @@ horst <- cbind.data.frame(t(out), taus.combn)
 saveRDS(horst, "horst_tau.RDS")
 library("dplyr")
 horst %>% 
-  # group_by(GE, CGH, y) %>% add_count() %>% 
   filter(AVE_inner == max(AVE_inner))
 ```
 
