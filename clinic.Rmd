@@ -59,6 +59,9 @@ fact2numeric <- function(x){
 
 clinic$sexe <- ifelse(clinic$sexe == "M", 1, 0)
 clinic$age_an <- as.numeric(sub(",", ".", as.character(clinic$age_an), fixed = TRUE))
+# An outlier of age that we assume that that those are days and not years, 
+# so it is divided by 365
+clinic$age_an[clinic$age_an > 100] <- clinic$age_an[clinic$age_an > 100]/365.25
 Localisation <- sapply(levels(clinic$localisation), function(x){
   as.numeric(x == clinic$localisation)})
 ```
@@ -161,6 +164,7 @@ out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
+rownames(def) <- seq_len(nrow(def))
 def <- droplevels(def[!offset, ])
 saveRDS(def, file = "centroid_complicated.RDS")
 ```
