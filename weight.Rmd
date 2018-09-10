@@ -159,7 +159,7 @@ We see they also change however almost all agree but there are some slight chang
 
 ```{r}
 testing <- function(x, type) {
-  result.sgcca <- sgcca(A, x, c1 = c(.071,.2, 1), ncomp = c(1, 1, 1), 
+  result.sgcca <- RGCCA::sgcca(A, x, c1 = c(.071,.2, 1), ncomp = c(1, 1, 1), 
                        scheme = type, verbose = FALSE)
   
   ind <- apply(which(upper.tri(result.sgcca$C), arr.ind = TRUE), 1, 
@@ -230,9 +230,10 @@ And we can see the stability for each type of model
 ```{r}
 library("dplyr")
 def %>% 
-  group_by(sign(vs12), sign(vs13), sign(vs23), weights) %>% add_count() %>% 
-  filter(AVE_inner == max(AVE_inner)) %>% 
-  arrange(as.numeric(weights))
+  group_by(weights) %>% add_count() %>% 
+  dplyr::filter(AVE_inner == max(AVE_inner)) %>% 
+  arrange(desc(AVE_inner), as.numeric(weights)) %>% 
+  select(-matches("vs"))
 ```
 
 We can do the same with horst scheme.
