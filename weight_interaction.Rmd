@@ -1,0 +1,293 @@
+---
+title: "Weight optimization with interaction"
+author: "Lluís Revilla Sancho"
+date: "`r date()`"
+output:
+  html_document:
+    code_folding: show
+    toc: true
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, warning = FALSE, fig.width = 120, fig.height = 50, collapse = TRUE)
+library("RGCCA")
+library("gliomaData")
+library("ggplot2")
+library("patchwork")
+theme_set(theme_bw())
+```
+
+# Introduction
+
+In this vignette we explore the relationship between weights (and models) with the outcome of the integration using the glioma data available, with an interaction whitin the gene expression.
+
+```{r introduction}
+data(ge_cgh_locIGR, package = "gliomaData")
+A <- ge_cgh_locIGR$multiblocks
+Loc <- factor(ge_cgh_locIGR$y)
+levels(Loc) <- colnames(ge_cgh_locIGR$multiblocks$y)
+ncomp <- rep(1, length(A))
+# rgcca algorithm using the dual formulation for X1 and X2 
+# and the dual formulation for X3
+A[[3]] = A[[3]][, -3]
+
+# Prepare some preliminary design/weights
+C <-  matrix(c(0, 0, 1, 0, 0, 1, 1, 1, 0), 3, 3)
+dimnames(C) <- list(names(A), names(A))
+```
+
+# Weights
+
+To test some weights we can use the RV index between the matrices
+
+```{r RV, echo=FALSE}
+D2 <- D <- C
+for (i in seq_len(nrow(C))) {
+  Ai <- scale(A[[i]], scale = FALSE)
+  for (j in seq_len(i)) {
+    Bj <- scale(A[[j]], scale = FALSE)
+    if (i == j) {
+      D2[i, i] <- 0
+    } else {
+      D2[i, j] <- MatrixCorrelation::RV(Ai, Bj)
+      D2[j, i] <- D2[i, j]
+    }
+  }
+}
+
+```
+
+The correlation between the first components of a multidimentional scaling plot:
+
+```{r cor}
+cmds <- lapply(A, function(x){cmdscale(dist(scale2(x)), k = 1)})
+for (i in seq_len(nrow(C))) {
+  for (j in seq_len(i)) {
+    if (i == j) {
+      D[i, i] <- 0
+    } else {
+
+      D[i, j] <- cor(cmds[[i]], cmds[[j]])
+      D[j, i] <- D[i, j]
+    }
+  }
+}
+D <- abs(D)
+```
+
+
+Create the 1000 design matrix combinations
+
+```{r}
+weight <- seq(from = 0, to = 1, by = .1)
+C_list <- vector("list", length(weight))
+names(C_list) <- as.character(weight)
+
+for(i1 in weight){
+  C_list[[as.character(i1)]] <- vector("list", length(weight))
+  names(C_list[[as.character(i1)]]) <- as.character(weight)
+  for (i2 in weight){
+    C_list[[as.character(i1)]][[as.character(i2)]] <- vector("list", length(weight))
+    names(C_list[[as.character(i1)]][[as.character(i2)]]) <- as.character(weight)
+    for (i3 in weight) {
+      C[2, 3] <- i1
+      C[3, 2] <- i1
+      C[1, 3] <- i2
+      C[3, 1] <- i2
+      C[1, 2] <- i3
+      C[2, 1] <- i3
+      C_list[[as.character(i1)]][[as.character(i2)]][[as.character(i3)]] <- C
+    }
+  }
+}
+C_list2 <- unlist(unlist(C_list, recursive = FALSE), recursive = FALSE)
+C_list3 <- c(C_list2,
+             lapply(C_list2, function(x){x[1, 1] <- weight[2];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[3];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[4];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[5];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[6];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[7];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[8];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[9];x}),
+             lapply(C_list2, function(x){x[1, 1] <- weight[10];x}))
+```
+
+
+```{r append}
+C_list2[[1332]] <- D
+C_list2[[1333]] <- D2
+```
+
+
+## The genes selected
+
+To know if it really makes sense to change the matrix weights we can look for changes
+
+```{r}
+result.sgcca = sgcca(A, D, c1 = c(.071,.2, 1), ncomp = ncomp, 
+                     scheme = "centroid", verbose = FALSE)
+result.sgcca2 = sgcca(A, D2, c1 = c(.071,.2, 1), ncomp = ncomp, 
+                     scheme = "centroid", verbose = FALSE)
+result.sgcca3 = sgcca(A, C, c1 = c(.071,.2, 1), ncomp = ncomp, 
+                     scheme = "centroid", verbose = FALSE)
+comp.weight <- function(x, y){
+  xdiff <- x != 0
+  ydiff <- y != 0
+  intersect(names(x[xdiff]), names(y[ydiff]))
+}
+
+l <- list(result.sgcca, result.sgcca2, result.sgcca3)
+outm <- matrix(0, ncol = length(l), nrow = length(l))
+for (i in seq_len(length(l))) {
+  for (j in seq_len(i)) {
+    outm[i, j] <- length(comp.weight(l[[i]]$a[[1]][, 1], l[[j]]$a[[1]][, 1]))
+    outm[j, i] <- outm[i, j]
+  }
+}
+GE <- outm/max(outm)
+dimnames(GE) <- list(c("D", "D2", "C"), c("D", "D2", "C"))
+GE
+```
+We can see that with different weights different genes are selected, and if we look at the CGH:
+```{r}
+outm <- matrix(0, ncol = length(l), nrow = length(l))
+for (i in seq_len(length(l))) {
+  for (j in seq_len(i)) {
+    outm[i, j] <- length(comp.weight(l[[i]]$a[[2]][, 1], l[[j]]$a[[2]][, 1]))
+    outm[j, i] <- outm[i, j]
+  }
+}
+CGH <- outm/max(outm)
+dimnames(CGH) <- list(c("D", "D2", "C"), c("D", "D2", "C"))
+CGH
+```
+
+We see they also change however almost all agree but there are some slight changes of up to 25%
+
+
+```{r}
+testing <- function(x, type) {
+  result.sgcca <- RGCCA::sgcca(A, x, c1 = c(.071,.2, 1), ncomp = c(1, 1, 1), 
+                       scheme = type, verbose = FALSE)
+  
+  ind <- apply(which(upper.tri(result.sgcca$C), arr.ind = TRUE), 1, 
+               paste0, collapse = "")
+  
+  # Correlation between Y
+  Y <- simplify2array(result.sgcca$Y, higher = FALSE)
+  cY <- cor(Y)
+  d <- cY * x
+  vs <- cY[upper.tri(cY)]
+  names(vs) <- paste0("vs", ind)
+  # Canonical correlation
+  cc <- sum(abs(d[upper.tri(d)]))
+  # Values of the design matrix
+  vars <- result.sgcca$C[upper.tri(result.sgcca$C)]
+  names(vars) <- paste0("var", ind)
+  vars <- c(vars, "var11" = result.sgcca$C[1, 1])
+  weight <- sum(vars != 0)
+  names(weight) <- "weights"
+  
+  # Output
+  c(vs, unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")]), cc1 = cc, 
+    vars, weight)
+}
+
+# Design matrix:
+# 0.0 var12 var13
+# var12 0.0  var23
+# var13 var23  0.0
+```
+
+### Centroid scheme
+
+Using the centroid scheme
+
+```{r centroid}
+out <- sapply(C_list3, testing, type = "centroid", USE.NAMES = FALSE)
+out2 <- t(out)
+def <- as.data.frame(out2)
+def$weights <- as.factor(def$weights)
+offset <- is.na(def$AVE_inner)
+def <- droplevels(def[!offset, ])
+saveRDS(def, file = "centroid_interactions.RDS")
+```
+
+We can explore by type of model how accurate is the model.
+```{r}
+library("dplyr")
+def %>% 
+  group_by(weights) %>% 
+  add_count() %>% 
+  dplyr::filter(AVE_inner == max(AVE_inner)) %>% 
+  arrange(desc(AVE_inner), desc(as.numeric(weights))) %>% 
+  select(-matches("vs"))
+```
+We can plot them
+
+```{r plot_centroid}
+p <- ggplot(def)
+r1 <- p + geom_point(aes(cc1, AVE_inner, col = weights)) + guides(col = FALSE)
+r2 <- p + geom_point(aes(cc1, AVE_outer, col = weights)) + guides(col = FALSE)
+r3 <- p + geom_count(aes(AVE_inner, AVE_outer, col = weights))
+p + geom_point(aes(AVE_inner, AVE_outer, col = weights)) + facet_wrap(~weights)
+p+geom_point(aes(AVE_inner, cc1, col = weights))
+q1 <- p + geom_point(aes(var1, AVE_outer, col = weights))  + guides(col = FALSE) +
+  geom_smooth(aes(var2, AVE_outer, col = weights))
+q2 <- p + geom_point(aes(var2, AVE_outer, col = weights)) + ylab("") + guides(col = FALSE) +
+  geom_smooth(aes(var2, AVE_outer, col = weights))
+q3 <- p + geom_point(aes(var3, AVE_outer, col = weights)) + ylab("") + guides(col = FALSE) +
+  geom_smooth(aes(var3, AVE_outer, col = weights))
+s1 <- p + geom_point(aes(var1, AVE_inner, col = weights))  + guides(col = FALSE) +
+  geom_smooth(aes(var1, AVE_inner, col = weights))
+s2 <- p + geom_point(aes(var2, AVE_inner, col = weights)) + ylab("") + guides(col = FALSE) +
+  geom_smooth(aes(var2, AVE_inner, col = weights))
+s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(col = FALSE) +
+  geom_smooth(aes(var3, AVE_inner, col = weights))
+(r1 + r2 + r3) / (q1 + q2 + q3) / (s1 + s2 + s3)
+```
+
+## Conclusions
+
+In general using only two weights leads to select models that account for more 
+variance while, even if we can't see in here, the model having only 2 variables 
+depends more on the weights regardless which scheme we use.
+The weights that report more inner AVE are consistent for each scheme.
+The distinction seems to be between adding a slighly relationship between CGH 
+and GE or not. [CGE](https://en.wikipedia.org/wiki/Comparative_genomic_hybridization)
+allows to find copy number variations, which might affect the gene expression, 
+thus is reasonable to include in a model the interaction between copy number 
+variation and gene expression, as well as it is unexpected that it might play a .
+huge role But we can see that its role is not neglibile 
+
+We can check them:
+```{r}
+C_model2 <- structure(c(0, 0, 1, 0, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
+    c("GE", "CGH", "y"), c("GE", "CGH", "y")))
+C_model3 <- structure(c(0, 0.1, 1, 0.1, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
+    c("GE", "CGH", "y"), c("GE", "CGH", "y")))
+
+centroid.2 <- sgcca(A, C_model2, c1 = c(.071,.2, 1), ncomp = ncomp, 
+      scheme = "centroid", verbose = FALSE)
+centroid.3 <- sgcca(A, C_model3, c1 = c(.071,.2, 1), ncomp = ncomp, 
+      scheme = "centroid", verbose = FALSE)
+plot(centroid.2$Y[[1]][, 1], centroid.2$Y[[2]][, 1], 
+     col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 2")
+plot(centroid.3$Y[[1]][, 1], centroid.3$Y[[2]][, 1], 
+     col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 3")
+```
+
+Note that there are few differences between them, both of them allow to 
+differentiate localization of the tumor by gene expression. Indeed, both of them
+select the same genes `r length(intersect(names(comp.GE.3)[comp.GE.3 != 0], names(comp.GE.2)[comp.GE.2 != 0]))`,
+but select different number of copy number variations (`r sum(comp.CGH.2 != 0)` and `r sum(comp.CGH.3 != 0)`, for model 2 and model 3), altough `r ength(intersect(names(comp.CGH.3)[comp.CGH.3 != 0], names(comp.CGH.2)[comp.CGH.2 != 0]))` are shared. 
+
+## Session Info {-}
+
+```{r session, echo=FALSE}
+devtools::session_info()
+```
