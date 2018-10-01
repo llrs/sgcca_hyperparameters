@@ -17,6 +17,7 @@ library("RGCCA")
 library("gliomaData")
 library("ggplot2")
 library("patchwork")
+library("integration")
 theme_set(theme_bw())
 ```
 
@@ -75,6 +76,19 @@ A$Loc <- as.matrix(Localisation[, 1:2]) # We remove the last column because it i
 names(A) <- c("GE", "CGH", "Invariable", "Localisation")
 ```
 
+```{r}
+library("globaltest")
+library("SummarizedExperiment")
+assays <- SimpleList("GE" = base::t(A$GE), "CGH" = base::t(A$CGH))
+assays <- S4Vectors::sapply(assays, function(x){
+  base::colnames(x) <- NULL
+  x
+})
+colData <- DataFrame(clinic[, c("localisation", "grade.OMS", "age_an", "sexe")])
+base::rownames(colData) <- NULL
+se <- SummarizedExperiment(assays= assays, colData=colData)
+```
+
 # Srhinkage
 
 ```{r tau}
@@ -86,59 +100,11 @@ shrinkage <- c(.071,.2, 1, 1)
 
 # Design matrix
 
-Now that we are ready to go, we need to test, all the previous things together
+Now that we are ready to go, we need to test, all the previous things together.
+Here we create a design matrix of dimension 4 with 4 weights.
 
 ```{r}
-C <- matrix(0, nrow = length(A), ncol = length(A), dimnames = list(names(A), names(A)))
-nweight <- 4
-weight <- seq(from = 0, to = 1, length.out = nweight)
-C_list <- vector("list", nweight)
-cweight <- as.character(weight)
-names(C_list) <- cweight
-
-for(i1 in cweight) {
-  C_list[[as.character(i1)]] <- vector("list", nweight)
-  names(C_list[[(i1)]]) <- cweight
-  for (i2 in cweight) {
-    C_list[[(i1)]][[(i2)]] <- vector("list", nweight)
-    names(C_list[[(i1)]][[(i2)]]) <- cweight
-    for (i3 in cweight) {
-      C_list[[(i1)]][[(i2)]][[(i3)]] <- vector("list", nweight)
-      names(C_list[[(i1)]][[(i2)]][[(i3)]]) <- cweight
-      for(i4 in cweight) {
-        C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]] <- vector("list", nweight)
-        names(C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]]) <- cweight
-        for (i5 in cweight) {
-          C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]][[(i5)]] <- vector("list", nweight)
-          names(C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]][[(i5)]]) <- cweight
-          for (i6 in cweight) {
-            C[1, 2] <- as.numeric(i1)
-            C[2, 1] <- as.numeric(i2)
-            
-            C[1, 3] <- as.numeric(i2)
-            C[3, 1] <- as.numeric(i2)
-            
-            C[1, 4] <- as.numeric(i3)
-            C[4, 1] <- as.numeric(i3)
-            
-            C[2, 3] <- as.numeric(i4)
-            C[3, 2] <- as.numeric(i4)
-            
-            C[2, 4] <- as.numeric(i5)
-            C[4, 2] <- as.numeric(i5)
-            
-            C[4, 3] <- as.numeric(i6)
-            C[3, 4] <- as.numeric(i6)
-            C_list[[i1]][[i2]][[i3]][[i4]][[i5]][[i6]] <- C
-          }
-        }
-      }
-    }
-  }
-}
-C_list2 <- unlist(unlist(unlist(unlist(unlist(C_list, FALSE, FALSE), 
-                                       FALSE, FALSE), FALSE, FALSE), 
-                         FALSE, FALSE), FALSE, FALSE)
+C_list2 <- weight_design(4, 4)
 ```
 
 # Evaluation of designs
@@ -281,6 +247,13 @@ result.sgcca <- sgcca(A, design.final, c1 = shrinkage, ncomp = rep(2, length(A))
 plot(result.sgcca$Y[[1]][, 1], result.sgcca$Y[[2]][, 1], xlab = "GE", ylab = "CGH", 
      col = clinic$localisation)
 
+```
+
+
+```{r}
+lmC <- lm(AVE_inner~0+var12+var13+var14+var23+var24+var34, data = def)
+glance(lmC)
+tidy(lmC) %>% arrange(desc(estimate))
 ```
 
 
