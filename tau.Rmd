@@ -81,21 +81,34 @@ sgcca_eval <- function(x, scheme){
 ```{r centroid}
 out <- apply(taus.combn, 1, sgcca_eval, scheme = "centroid")
 centroid <- cbind.data.frame(t(out), taus.combn)
+saveRDS(centroid, "centroid_tau.RDS")
 library("dplyr")
 centroid %>% 
   filter(AVE_inner == max(AVE_inner))
-saveRDS(centroid, "centroid_tau.RDS")
 ```
 
+```{r}
+centroid <- cbind(centroid, scheme = "centroid")
+lmC <- lm(AVE_inner ~ 0+GE+CGH+y, data = centroid)
+glance(lmC)
+tidy(lmC) %>% arrange(desc(estimate))
+```
 
 ```{r factorial}
 out <- apply(taus.combn, 1, sgcca_eval, scheme = "factorial")
 factorial <- cbind.data.frame(t(out), taus.combn)
+saveRDS(factorial, "factorial_tau.RDS")
 factorial %>% 
   filter(AVE_inner == max(AVE_inner))
-saveRDS(factorial, "factorial_tau.RDS")
 ```
 
+
+```{r}
+factorial <- cbind(factorial, scheme = "factorial")
+lmF <- lm(AVE_inner ~ 0+ GE+CGH+y, data = factorial)
+glance(lmF)
+tidy(lmF) %>% arrange(desc(estimate))
+```
 
 ```{r horst}
 out <- apply(taus.combn, 1, sgcca_eval, scheme = "horst")
@@ -103,6 +116,24 @@ horst <- cbind.data.frame(t(out), taus.combn)
 saveRDS(horst, "horst_tau.RDS")
 horst %>% 
   filter(AVE_inner == max(AVE_inner))
+```
+
+```{r}
+horst <- cbind(horst, scheme = "horst")
+lmH <- lm(AVE_inner ~ 0 +GE+CGH+y, data = horst)
+glance(lmH)
+tidy(lmH) %>% arrange(desc(estimate))
+```
+
+
+```{r}
+all_data <- rbind(horst, factorial, centroid)
+lmALL <- lm(AVE_inner ~ 0+GE+CGH+y, data = all_data)
+glance(lmALL)
+tidy(lmALL)
+lmALL2 <- lm(AVE_inner ~ 0+scheme+GE+CGH+y, data = all_data)
+glance(lmALL2)
+tidy(lmALL2)
 ```
 
 # Plot the result
@@ -168,6 +199,34 @@ q <- p + geom_count(aes(AVE_outer, AVE_inner)) +
   xlab("AVE outer") + ylab("AVE inner")
 
 (p1 + p2 + p3) / (q)
+```
+
+
+```{r}
+out <- cbind(taus.combn, horst)
+colnames(out) <- c("tau.GE", "tau.CGH", "tau.y", colnames(out)[4:9])
+ggplot(out) + 
+  geom_point(aes(tau.y, AVE_inner, col = tau.CGH)) + 
+  scale_color_viridis_c() + 
+  ylab("inner AVE") + 
+  ggtitle("Colored by tau of CGH") + 
+ggplot(out) + 
+  geom_point(aes(tau.y, AVE_inner, col = tau.GE)) + 
+  scale_color_viridis_c() + 
+  ylab("inner AVE") + 
+  ggtitle("Colored by tau of GE")
+
+ggplot(out) + 
+  geom_point(aes(tau.y, AVE_outer, col = tau.CGH)) + 
+  scale_color_viridis_c() + 
+  ylab("outer AVE") + 
+  ggtitle("Colored by tau of CGH") + 
+ggplot(out) + 
+  geom_point(aes(tau.y, AVE_outer, col = tau.GE)) + 
+  scale_color_viridis_c() + 
+  ylab("outer AVE") + 
+  ggtitle("Colored by tau of GE")
+
 ```
 
 ## Session Info {-}

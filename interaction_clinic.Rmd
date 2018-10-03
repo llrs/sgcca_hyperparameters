@@ -85,58 +85,11 @@ shrinkage <- c(.071,.2, 1, 1)
 # Design matrix
 
 Now that we are ready to go, we need to test, all the previous things together
-
+We create a design matrix of dimension 4 with 4 weights per position and the interaction
 ```{r}
-C <- matrix(0, nrow = length(A), ncol = length(A), dimnames = list(names(A), names(A)))
-nweight <- 4
-weight <- seq(from = 0, to = 1, length.out = nweight)
-C_list <- vector("list", nweight)
-cweight <- as.character(weight)
-names(C_list) <- cweight
-
-for(i1 in cweight) {
-  C_list[[as.character(i1)]] <- vector("list", nweight)
-  names(C_list[[(i1)]]) <- cweight
-  for (i2 in cweight) {
-    C_list[[(i1)]][[(i2)]] <- vector("list", nweight)
-    names(C_list[[(i1)]][[(i2)]]) <- cweight
-    for (i3 in cweight) {
-      C_list[[(i1)]][[(i2)]][[(i3)]] <- vector("list", nweight)
-      names(C_list[[(i1)]][[(i2)]][[(i3)]]) <- cweight
-      for(i4 in cweight) {
-        C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]] <- vector("list", nweight)
-        names(C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]]) <- cweight
-        for (i5 in cweight) {
-          C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]][[(i5)]] <- vector("list", nweight)
-          names(C_list[[(i1)]][[(i2)]][[(i3)]][[(i4)]][[(i5)]]) <- cweight
-          for (i6 in cweight) {
-            C[1, 2] <- as.numeric(i1)
-            C[2, 1] <- as.numeric(i2)
-            
-            C[1, 3] <- as.numeric(i2)
-            C[3, 1] <- as.numeric(i2)
-            
-            C[1, 4] <- as.numeric(i3)
-            C[4, 1] <- as.numeric(i3)
-            
-            C[2, 3] <- as.numeric(i4)
-            C[3, 2] <- as.numeric(i4)
-            
-            C[2, 4] <- as.numeric(i5)
-            C[4, 2] <- as.numeric(i5)
-            
-            C[4, 3] <- as.numeric(i6)
-            C[3, 4] <- as.numeric(i6)
-            C_list[[i1]][[i2]][[i3]][[i4]][[i5]][[i6]] <- C
-          }
-        }
-      }
-    }
-  }
-}
-C_list2 <- unlist(unlist(unlist(unlist(unlist(C_list, FALSE, FALSE), 
-                                       FALSE, FALSE), FALSE, FALSE), 
-                         FALSE, FALSE), FALSE, FALSE)
+nweights <- 4
+weight <- seq(from = 0, to = 1, length.out = nweights)
+C_list2 <- weight_design(nweights, 4)
 C_list3 <- c(C_list2, 
              lapply(C_list2, function(x){x[1, 1] <- weight[2];x}),
              lapply(C_list2, function(x){x[1, 1] <- weight[3];x}),
@@ -270,6 +223,13 @@ s2 <- p + geom_point(aes(var2, AVE_inner, col = weights)) + ylab("") + guides(co
 s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(col = FALSE) +
   geom_smooth(aes(var3, AVE_inner, col = weights))
 (r1 + r2 + r3) / (q1 + q2 + q3) / (s1 + s2 + s3)
+```
+
+
+```{r}
+lmIC <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
+glance(lmIC)
+tidy(lmIC) %>% arrange(desc(estimate))
 ```
 
 # Testing

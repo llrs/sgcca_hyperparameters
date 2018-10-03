@@ -15,6 +15,7 @@ library("RGCCA")
 library("gliomaData")
 library("ggplot2")
 library("patchwork")
+library("integration")
 theme_set(theme_bw())
 ```
 
@@ -28,6 +29,7 @@ A <- ge_cgh_locIGR$multiblocks
 Loc <- factor(ge_cgh_locIGR$y)
 levels(Loc) <- colnames(ge_cgh_locIGR$multiblocks$y)
 ncomp <- rep(1, length(A))
+shrinkage <- c(.071,.2, 1)
 # rgcca algorithm using the dual formulation for X1 and X2 
 # and the dual formulation for X3
 A[[3]] = A[[3]][, -3]
@@ -80,28 +82,9 @@ D <- abs(D)
 Create the 1000 design matrix combinations
 
 ```{r}
-weight <- seq(from = 0, to = 1, by = .1)
-C_list <- vector("list", length(weight))
-names(C_list) <- as.character(weight)
-
-for(i1 in weight){
-  C_list[[as.character(i1)]] <- vector("list", length(weight))
-  names(C_list[[as.character(i1)]]) <- as.character(weight)
-  for (i2 in weight){
-    C_list[[as.character(i1)]][[as.character(i2)]] <- vector("list", length(weight))
-    names(C_list[[as.character(i1)]][[as.character(i2)]]) <- as.character(weight)
-    for (i3 in weight) {
-      C[2, 3] <- i1
-      C[3, 2] <- i1
-      C[1, 3] <- i2
-      C[3, 1] <- i2
-      C[1, 2] <- i3
-      C[2, 1] <- i3
-      C_list[[as.character(i1)]][[as.character(i2)]][[as.character(i3)]] <- C
-    }
-  }
-}
-C_list2 <- unlist(unlist(C_list, recursive = FALSE), recursive = FALSE)
+nweight <- 11
+weight <- seq(from = 0, to = 1, length.out = nweight)
+C_list2 <- weight_design(11, 3)
 ```
 
 
@@ -116,11 +99,11 @@ C_list2[[1333]] <- D2
 To know if it really makes sense to change the matrix weights we can look for changes
 
 ```{r}
-result.sgcca = sgcca(A, D, c1 = c(.071,.2, 1), ncomp = ncomp, 
+result.sgcca = sgcca(A, D, c1 = shrinkage, ncomp = ncomp, 
                      scheme = "centroid", verbose = FALSE)
-result.sgcca2 = sgcca(A, D2, c1 = c(.071,.2, 1), ncomp = ncomp, 
+result.sgcca2 = sgcca(A, D2, c1 = shrinkage, ncomp = ncomp, 
                      scheme = "centroid", verbose = FALSE)
-result.sgcca3 = sgcca(A, C, c1 = c(.071,.2, 1), ncomp = ncomp, 
+result.sgcca3 = sgcca(A, C, c1 = shrinkage, ncomp = ncomp, 
                      scheme = "centroid", verbose = FALSE)
 comp.weight <- function(x, y){
   xdiff <- x != 0
@@ -159,7 +142,7 @@ We see they also change however almost all agree but there are some slight chang
 
 ```{r}
 testing <- function(x, type) {
-  result.sgcca <- RGCCA::sgcca(A, x, c1 = c(.071,.2, 1), ncomp = c(1, 1, 1), 
+  result.sgcca <- RGCCA::sgcca(A, x, c1 = shrinkage, ncomp = c(1, 1, 1), 
                        scheme = type, verbose = FALSE)
   
   ind <- apply(which(upper.tri(result.sgcca$C), arr.ind = TRUE), 1, 
@@ -202,6 +185,14 @@ def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
 def <- droplevels(def[!offset, ])
 saveRDS(def, file = "centroid_weights.RDS")
+```
+
+
+```{r}
+library("broom")
+lmWC <- lm(AVE_inner ~ 0+var3+var2+var1, data=centroid_weights)
+glance(lmWC)
+tidy(lmWC) %>% arrange(desc(estimate))
 ```
 
 We can plot them
@@ -253,6 +244,13 @@ def <- droplevels(def[!offset, ])
 saveRDS(def, file = "horst_weights.RDS")
 ```
 
+
+```{r}
+lmWH <- lm(AVE_inner ~ 0+var3+var2+var1, data=horst_weights)
+glance(lmWH)
+tidy(lmWH) %>% arrange(desc(estimate))
+```
+
 ```{r plot_horst}
 p <- ggplot(def)
 r1 <- p + geom_point(aes(cc1, AVE_inner, col = weights)) + guides(col = FALSE)
@@ -292,6 +290,12 @@ def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
 def <- droplevels(def[!offset, ])
 saveRDS(def, file = "factorial_weights.RDS")
+```
+
+```{r}
+lmWF <- lm(AVE_inner ~ 0+var3+var2+var1, data=factorial_weights)
+glance(lmWF)
+tidy(lmWF) %>% arrange(desc(estimate))
 ```
 
 ```{r plot_factorial}
@@ -341,9 +345,9 @@ C_model2 <- structure(c(0, 0, 1, 0, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimna
 C_model3 <- structure(c(0, 0.1, 1, 0.1, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
     c("GE", "CGH", "y"), c("GE", "CGH", "y")))
 
-centroid.2 <- sgcca(A, C_model2, c1 = c(.071,.2, 1), ncomp = ncomp, 
+centroid.2 <- sgcca(A, C_model2, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
-centroid.3 <- sgcca(A, C_model3, c1 = c(.071,.2, 1), ncomp = ncomp, 
+centroid.3 <- sgcca(A, C_model3, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
 plot(centroid.2$Y[[1]][, 1], centroid.2$Y[[2]][, 1], 
      col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 2")

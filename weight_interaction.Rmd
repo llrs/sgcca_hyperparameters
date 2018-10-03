@@ -17,6 +17,7 @@ library("RGCCA")
 library("gliomaData")
 library("ggplot2")
 library("patchwork")
+library("integration")
 theme_set(theme_bw())
 ```
 
@@ -30,6 +31,7 @@ A <- ge_cgh_locIGR$multiblocks
 Loc <- factor(ge_cgh_locIGR$y)
 levels(Loc) <- colnames(ge_cgh_locIGR$multiblocks$y)
 ncomp <- rep(1, length(A))
+shrinkage <- c(.071, 1)
 # rgcca algorithm using the dual formulation for X1 and X2 
 # and the dual formulation for X3
 A[[3]] = A[[3]][, -3]
@@ -82,28 +84,9 @@ D <- abs(D)
 Create the 1000 design matrix combinations
 
 ```{r}
-weight <- seq(from = 0, to = 1, by = .1)
-C_list <- vector("list", length(weight))
-names(C_list) <- as.character(weight)
-
-for(i1 in weight){
-  C_list[[as.character(i1)]] <- vector("list", length(weight))
-  names(C_list[[as.character(i1)]]) <- as.character(weight)
-  for (i2 in weight){
-    C_list[[as.character(i1)]][[as.character(i2)]] <- vector("list", length(weight))
-    names(C_list[[as.character(i1)]][[as.character(i2)]]) <- as.character(weight)
-    for (i3 in weight) {
-      C[2, 3] <- i1
-      C[3, 2] <- i1
-      C[1, 3] <- i2
-      C[3, 1] <- i2
-      C[1, 2] <- i3
-      C[2, 1] <- i3
-      C_list[[as.character(i1)]][[as.character(i2)]][[as.character(i3)]] <- C
-    }
-  }
-}
-C_list2 <- unlist(unlist(C_list, recursive = FALSE), recursive = FALSE)
+nweight <- 11
+weight <- seq(from = 0, to = 1, length.out = nweight)
+C_list2 <- weight_design(11, 3)
 C_list3 <- c(C_list2,
              lapply(C_list2, function(x){x[1, 1] <- weight[2];x}),
              lapply(C_list2, function(x){x[1, 1] <- weight[3];x}),
@@ -128,11 +111,11 @@ C_list2[[1333]] <- D2
 To know if it really makes sense to change the matrix weights we can look for changes
 
 ```{r}
-result.sgcca = sgcca(A, D, c1 = c(.071,.2, 1), ncomp = ncomp, 
+result.sgcca = sgcca(A, D, c1 = shrinkage, ncomp = ncomp, 
                      scheme = "centroid", verbose = FALSE)
-result.sgcca2 = sgcca(A, D2, c1 = c(.071,.2, 1), ncomp = ncomp, 
+result.sgcca2 = sgcca(A, D2, c1 = shrinkage, ncomp = ncomp, 
                      scheme = "centroid", verbose = FALSE)
-result.sgcca3 = sgcca(A, C, c1 = c(.071,.2, 1), ncomp = ncomp, 
+result.sgcca3 = sgcca(A, C, c1 = shrinkage, ncomp = ncomp, 
                      scheme = "centroid", verbose = FALSE)
 comp.weight <- function(x, y){
   xdiff <- x != 0
@@ -171,7 +154,7 @@ We see they also change however almost all agree but there are some slight chang
 
 ```{r}
 testing <- function(x, type) {
-  result.sgcca <- RGCCA::sgcca(A, x, c1 = c(.071,.2, 1), ncomp = c(1, 1, 1), 
+  result.sgcca <- RGCCA::sgcca(A, x, c1 = shrinkage, ncomp = c(1, 1, 1), 
                        scheme = type, verbose = FALSE)
   
   ind <- apply(which(upper.tri(result.sgcca$C), arr.ind = TRUE), 1, 
@@ -251,6 +234,14 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 (r1 + r2 + r3) / (q1 + q2 + q3) / (s1 + s2 + s3)
 ```
 
+
+```{r}
+library("broom")
+lmI <- lm(AVE_inner ~0+var12+var13+var23+var11, data = def) 
+glance(lmI)
+tidy(lmI) %>% arrange(desc(estimate))
+```
+
 ## Conclusions
 
 In general using only two weights leads to select models that account for more 
@@ -270,10 +261,9 @@ C_model2 <- structure(c(0, 0, 1, 0, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimna
     c("GE", "CGH", "y"), c("GE", "CGH", "y")))
 C_model3 <- structure(c(0, 0.1, 1, 0.1, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
     c("GE", "CGH", "y"), c("GE", "CGH", "y")))
-
-centroid.2 <- sgcca(A, C_model2, c1 = c(.071,.2, 1), ncomp = ncomp, 
+centroid.2 <- sgcca(A, C_model2, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
-centroid.3 <- sgcca(A, C_model3, c1 = c(.071,.2, 1), ncomp = ncomp, 
+centroid.3 <- sgcca(A, C_model3, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
 plot(centroid.2$Y[[1]][, 1], centroid.2$Y[[2]][, 1], 
      col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 2")
@@ -285,6 +275,21 @@ Note that there are few differences between them, both of them allow to
 differentiate localization of the tumor by gene expression. Indeed, both of them
 select the same genes `r length(intersect(names(comp.GE.3)[comp.GE.3 != 0], names(comp.GE.2)[comp.GE.2 != 0]))`,
 but select different number of copy number variations (`r sum(comp.CGH.2 != 0)` and `r sum(comp.CGH.3 != 0)`, for model 2 and model 3), altough `r ength(intersect(names(comp.CGH.3)[comp.CGH.3 != 0], names(comp.CGH.2)[comp.CGH.2 != 0]))` are shared. 
+
+# Bootstrapping the samples
+
+```{r}
+
+# Model 2
+boot <- boot_sgcca(A, C_model2, shrinkage, 1000) # Bootstraps
+saveRDS(boot, file = "bootstrap_model2.RDS") # Save
+boot_evaluate(boot$STAB) # Plot some models
+
+# Model 3
+boot <- boot_sgcca(A, C_model3, shrinkage, 1000)
+saveRDS(boot, file = "bootstrap_model3.RDS")
+boot_evaluate(boot$STAB)
+```
 
 ## Session Info {-}
 
