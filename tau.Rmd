@@ -127,6 +127,7 @@ tidy(lmH) %>% arrange(desc(estimate))
 
 
 ```{r}
+library("broom")
 all_data <- rbind(horst, factorial, centroid)
 lmALL <- lm(AVE_inner ~ 0+GE+CGH+y, data = all_data)
 glance(lmALL)

@@ -251,6 +251,7 @@ plot(result.sgcca$Y[[1]][, 1], result.sgcca$Y[[2]][, 1], xlab = "GE", ylab = "CG
 
 
 ```{r}
+library("broom")
 lmC <- lm(AVE_inner~0+var12+var13+var14+var23+var24+var34, data = def)
 glance(lmC)
 tidy(lmC) %>% arrange(desc(estimate))
