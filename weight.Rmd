@@ -190,7 +190,9 @@ saveRDS(centroid_weights, file = "centroid_weights.RDS")
 
 ```{r}
 library("broom")
-lmWC <- lm(AVE_inner ~ 0+var3+var2+var1, data=centroid_weights)
+lmWC0 <- lm(AVE_inner ~ 0+var3+var2+var1, data=centroid_weights)
+lmWC <- lm(AVE_inner ~ 0+var3*var2*var1, data=centroid_weights)
+anova(lmWC, lmWC0)
 glance(lmWC)
 tidy(lmWC) %>% arrange(desc(estimate))
 ```
@@ -246,7 +248,9 @@ saveRDS(horst_weights, file = "horst_weights.RDS")
 
 
 ```{r}
-lmWH <- lm(AVE_inner ~ 0+var3+var2+var1, data=horst_weights)
+lmWH0 <- lm(AVE_inner ~ 0+var3+var2+var1, data=horst_weights)
+lmWH <- lm(AVE_inner ~ 0+var3*var2*var1, data=horst_weights)
+anova(lmWH0, lmWH)
 glance(lmWH)
 tidy(lmWH) %>% arrange(desc(estimate))
 ```
@@ -293,9 +297,11 @@ saveRDS(factorial_weights, file = "factorial_weights.RDS")
 ```
 
 ```{r}
-lmWF <- lm(AVE_inner ~ 0+var3+var2+var1, data=factorial_weights)
+lmWF0 <- lm(AVE_inner ~ 0+var3+var2+var1, data=factorial_weights)
+lmWF <- lm(AVE_inner ~ 0+var3*var2*var1, data=factorial_weights)
+anova(lmWF0, lmWF)
 glance(lmWF)
-tidy(lmWF) %>% arrange(desc(estimate))
+tidy(lmWF) %>% arrange(desc(abs(estimate)))
 ```
 
 ```{r plot_factorial}
@@ -331,12 +337,15 @@ def <- rbind(centroid_weights, factorial_weights, horst_weights)
 def <- cbind(def, scheme= c(rep("centroid", nrow(centroid_weights)),
                             rep("factorial", nrow(factorial_weights)),
                             rep("horst", nrow(horst_weights))))
-lmDef <- lm(AVE_inner~0+var1+var2+var3, data=def)
+lmDef0 <- lm(AVE_inner~0+var1+var2+var3, data=def)
+lmDef <- lm(AVE_inner~0+var1*var2*var3, data=def)
+anova(lmDef0, lmDef)
 glance(lmDef)
-tidy(lmDef) %>% arrange(desc(estimate))
-lmDef2 <- lm(AVE_inner~0+scheme+var1+var2+var3, data=def)
+tidy(lmDef) %>% arrange(desc(abs(estimate)))
+lmDef20 <- lm(AVE_inner~0+scheme+var1+var2+var3, data=def)
+lmDef2 <- lm(AVE_inner~0+scheme*var1*var2*var3, data=def)
 glance(lmDef2)
-tidy(lmDef2) %>% arrange(desc(estimate))
+tidy(lmDef2) %>% arrange(desc(abs(estimate)))
 ```
 
 
