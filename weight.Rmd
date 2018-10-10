@@ -183,8 +183,8 @@ out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
-def <- droplevels(def[!offset, ])
-saveRDS(def, file = "centroid_weights.RDS")
+centroid_weights <- droplevels(def[!offset, ])
+saveRDS(centroid_weights, file = "centroid_weights.RDS")
 ```
 
 
@@ -198,7 +198,7 @@ tidy(lmWC) %>% arrange(desc(estimate))
 We can plot them
 
 ```{r plot_centroid}
-p <- ggplot(def)
+p <- ggplot(centroid_weights)
 r1 <- p + geom_point(aes(cc1, AVE_inner, col = weights)) + guides(col = FALSE)
 r2 <- p + geom_point(aes(cc1, AVE_outer, col = weights)) + guides(col = FALSE)
 r3 <- p + geom_count(aes(AVE_inner, AVE_outer, col = weights))
@@ -220,7 +220,7 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 And we can see the stability for each type of model
 ```{r}
 library("dplyr")
-def %>% 
+centroid_weights %>% 
   group_by(weights) %>% add_count() %>% 
   dplyr::filter(AVE_inner == max(AVE_inner)) %>% 
   arrange(desc(AVE_inner), as.numeric(weights)) %>% 
@@ -240,8 +240,8 @@ out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
-def <- droplevels(def[!offset, ])
-saveRDS(def, file = "horst_weights.RDS")
+horst_weights <- droplevels(def[!offset, ])
+saveRDS(horst_weights, file = "horst_weights.RDS")
 ```
 
 
@@ -252,7 +252,7 @@ tidy(lmWH) %>% arrange(desc(estimate))
 ```
 
 ```{r plot_horst}
-p <- ggplot(def)
+p <- ggplot(horst_weights)
 r1 <- p + geom_point(aes(cc1, AVE_inner, col = weights)) + guides(col = FALSE)
 r2 <- p + geom_point(aes(cc1, AVE_outer, col = weights)) + guides(col = FALSE)
 r3 <- p + geom_count(aes(AVE_inner, AVE_outer, col = weights))
@@ -272,7 +272,7 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 ```
 
 ```{r}
-def %>% 
+horst_weights %>% 
   group_by(sign(vs12), sign(vs13), sign(vs23), weights) %>% add_count() %>% 
   filter(AVE_inner == max(AVE_inner)) %>% 
   arrange(as.numeric(weights))
@@ -288,8 +288,8 @@ out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
-def <- droplevels(def[!offset, ])
-saveRDS(def, file = "factorial_weights.RDS")
+factorial_weights <- droplevels(def[!offset, ])
+saveRDS(factorial_weights, file = "factorial_weights.RDS")
 ```
 
 ```{r}
@@ -299,7 +299,7 @@ tidy(lmWF) %>% arrange(desc(estimate))
 ```
 
 ```{r plot_factorial}
-p <- ggplot(def)
+p <- ggplot(factorial_weights)
 r1 <- p + geom_point(aes(cc1, AVE_inner, col = weights)) + guides(col = FALSE)
 r2 <- p + geom_point(aes(cc1, AVE_outer, col = weights)) + guides(col = FALSE)
 r3 <- p + geom_count(aes(AVE_inner, AVE_outer, col = weights))
@@ -319,11 +319,26 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 ```
 
 ```{r}
-def %>% 
+factorial_weights %>% 
   group_by(sign(vs12), sign(vs13), sign(vs23), weights) %>% add_count() %>% 
   filter(AVE_inner == max(AVE_inner)) %>% 
   arrange(as.numeric(weights), AVE_inner)
 ```
+
+We can evaluate the influence of the scheme on the weights:
+```{r}
+def <- rbind(centroid_weights, factorial_weights, horst_weights)
+def <- cbind(def, scheme= c(rep("centroid", nrow(centroid_weights)),
+                            rep("factorial", nrow(factorial_weights)),
+                            rep("horst", nrow(horst_weights))))
+lmDef <- lm(AVE_inner~0+var1+var2+var3, data=def)
+glance(lmDef)
+tidy(lmDef) %>% arrange(desc(estimate))
+lmDef2 <- lm(AVE_inner~0+scheme+var1+var2+var3, data=def)
+glance(lmDef2)
+tidy(lmDef2) %>% arrange(desc(estimate))
+```
+
 
 ## Conclusions
 

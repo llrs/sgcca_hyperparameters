@@ -161,8 +161,9 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 (r1 + r2 + r3) / (q1 + q2 + q3) / (s1 + s2 + s3)
 ```
 
-
+We can see the influence of each weight on the inner AVE via modeling it.
 ```{r}
+library("broom")
 lmS <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
 glance(lmS)
 tidy(lmS) %>% arrange(desc(estimate))
@@ -178,24 +179,28 @@ We select the best model
 ```{r}
 nb_block = 4
 #length(B)
-D =matrix(0, nb_block, nb_block)
+D = matrix(0, nb_block, nb_block)
 D[2, 3] <- D[3, 2] <- D[1, 4] <- D[4, 1] <- 1/3
 D[1, 1] <- 1
 dimnames(D) <- list(names(B), names(B))
 
-sgcca.final = sgcca(B, D, c1 = c(.071,.2, 1/sqrt(NCOL(B[[3]]))+.2, 1),
-    ncomp =c(rep(2, (length(B)-1)),1),
+sgcca.final = sgcca(B, D, c1 = c(.071,.2, 1/sqrt(NCOL(B[[3]])) + .2, 1),
+    ncomp = c(rep(2, (length(B) - 1)),1),
     scheme = "centroid", scale = TRUE,
     verbose = FALSE)
+levels(Loc) <- c("hemisphere", "DIPG", "midline")
 final.superblock <- cbind.data.frame(sgcca.final$Y[[3]], Loc, Samples = rownames(sgcca.final$Y[[3]]))
 final.GE <- cbind.data.frame(sgcca.final$Y[[1]], Loc, Samples = rownames(sgcca.final$Y[[3]]))
 ggplot(final.superblock) +
   geom_text(aes(comp1, comp2, col = Loc, label = Samples)) +
-  ggtitle("Final design", subtitle = "Superblock")
+  ggtitle("Final design", subtitle = "Superblock") +
+  scale_color_viridis_d() +
+  guides(col = guide_legend(title = "Localization"))
 ggplot(final.GE) +
   geom_text(aes(comp1, comp2, col = Loc, label = Samples)) +
-  ggtitle("Final design", subtitle = "GE")
-sgcca.final$AVE$AVE_inner
+  ggtitle("Final design", subtitle = "GE") +
+  scale_color_viridis_d() +
+  guides(col = guide_legend(title = "Localization"))
 ```
 
 ## Conclusions
