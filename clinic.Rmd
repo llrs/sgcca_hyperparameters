@@ -104,7 +104,9 @@ Now that we are ready to go, we need to test, all the previous things together.
 Here we create a design matrix of dimension 4 with 4 weights.
 
 ```{r}
-C_list2 <- weight_design(4, 4)
+C_list2 <- weight_design(weights = 4, size = 4)
+keep <- check_design(C_list2)
+C_list2 <- C_list2[keep]
 ```
 
 # Evaluation of designs

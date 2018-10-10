@@ -85,6 +85,8 @@ Create the 1000 design matrix combinations
 nweight <- 11
 weight <- seq(from = 0, to = 1, length.out = nweight)
 C_list2 <- weight_design(11, 3)
+keep <- check_design(C_list2)
+C_list2 <- C_list2[keep]
 ```
 
 
