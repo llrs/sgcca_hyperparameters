@@ -121,8 +121,7 @@ testing <- function(x, type) {
 Using the centroid scheme
 
 ```{r centroid}
-C_list3_keep <- vapply(C_list3, function(x){Matrix::rankMatrix(x) == 4L}, logical(1L))
-out <- sapply(C_list3[C_list3_keep], testing, type = "centroid", USE.NAMES = FALSE)
+out <- sapply(C_list3, testing, type = "centroid", USE.NAMES = FALSE)
 out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
