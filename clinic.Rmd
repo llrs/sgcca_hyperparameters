@@ -76,7 +76,7 @@ A$Loc <- as.matrix(Localisation[, 1:2]) # We remove the last column because it i
 names(A) <- c("GE", "CGH", "Invariable", "Localisation")
 ```
 
-```{r}
+```{r, eval=FALSE}
 library("globaltest")
 library("SummarizedExperiment")
 assays <- SimpleList("GE" = base::t(A$GE), "CGH" = base::t(A$CGH))
@@ -86,7 +86,7 @@ assays <- S4Vectors::sapply(assays, function(x){
 })
 colData <- DataFrame(clinic[, c("localisation", "grade.OMS", "age_an", "sexe")])
 base::rownames(colData) <- NULL
-se <- SummarizedExperiment(assays= assays, colData=colData)
+se <- SummarizedExperiment(assays = assays, colData = colData)
 ```
 
 # Srhinkage
