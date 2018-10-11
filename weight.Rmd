@@ -91,10 +91,8 @@ C_list2 <- C_list2[keep]
 
 
 ```{r append}
-C_list2[[1332]] <- D
-C_list2[[1333]] <- D2
+C_list2 <- c(C_list2, list(D, D2))
 ```
-
 
 ## The genes selected
 
