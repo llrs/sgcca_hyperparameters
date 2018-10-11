@@ -134,14 +134,16 @@ tidy(lmH) %>% arrange(desc(abs(estimate)))
 
 ```{r}
 library("broom")
+library("dplyr")
 all_data <- rbind(horst, factorial, centroid)
 lmALL0 <- lm(AVE_inner ~ 0+GE+CGH+y, data = all_data)
 lmALL <- lm(AVE_inner ~ 0+GE*CGH*y, data = all_data)
 glance(lmALL)
-tidy(lmALL)
+tidy(lmALL) %>% arrange(desc(abs(estimate)))
 lmALL20 <- lm(AVE_inner ~ 0+scheme+GE+CGH+y, data = all_data)
 lmALL2 <- lm(AVE_inner ~ 0+scheme*GE*CGH*y, data = all_data)
-anova(lmALL0, lmALL, lmALL2, lmALL20)
+o <- anova(lmALL0, lmALL, lmALL2, lmALL20)
+tidy(lmALL2) %>% arrange(desc(abs(estimate)))
 glance(lmALL2)
 tidy(lmALL2)
 ```
