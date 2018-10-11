@@ -4,7 +4,7 @@ superblock_interactions <- readRDS("superblock_interactions.RDS")
 weights_interactions <- readRDS("centroid_interactions.RDS")
 
 si <- superblock_interactions[,  c("AVE_inner", "var11")]
-wi <- weight_interactions[,  c("AVE_inner", "var11")]
+wi <- weights_interactions[,  c("AVE_inner", "var11")]
 
 si <- cbind(si, Type = "Superblock")
 wi <- cbind(wi, Type = "Weights")
@@ -18,8 +18,9 @@ my_comparisons <- list(c("Superblock-No", "Superblock-Yes"),
                        c("Weights-No", "Weights-Yes"),
                        c("Superblock-No", "Weights-No"),
                        c("Weights-Yes", "Superblock-Yes"))
+
 ggviolin(df, x = "Classification", y = "AVE_inner") +
-  stat_compare_means(comparisons = my_comparisons, paired = FALSE)+ # Add pairwise comparisons p-value
+  stat_compare_means(comparisons = my_comparisons, paired = FALSE) + # Pairwise comparisons p-value
   grids() +
   ylab("inner AVE") +
   xlab("Study-interaction") +
