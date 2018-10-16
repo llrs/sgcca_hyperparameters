@@ -102,7 +102,10 @@ testing <- function(x, type) {
   vs <- cY[upper.tri(cY)]
   names(vs) <- paste0("vs", ind)
   # Canonical correlation
-  cc <- sum(abs(d[upper.tri(d)]))
+  cc <- switch(type,
+         centroid = sum(abs(d[upper.tri(d)])),
+         horst = sum(d[upper.tri(d)]),
+         factorial = sum(d[upper.tri(d)]^2))
   # Values of the design matrix
   vars <- result.sgcca$C[upper.tri(result.sgcca$C)]
   names(vars) <- paste0("var", ind)

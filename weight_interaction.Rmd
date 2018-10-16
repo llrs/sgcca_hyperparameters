@@ -152,6 +152,7 @@ We see they also change however almost all agree but there are some slight chang
 testing <- function(x, type) {
   result.sgcca <- RGCCA::sgcca(A, x, c1 = shrinkage, ncomp = c(1, 1, 1), 
                        scheme = type, verbose = FALSE)
+  type <- match.arg(type, c("centroid", "horst", "factorial"))
   
   ind <- apply(which(upper.tri(result.sgcca$C), arr.ind = TRUE), 1, 
                paste0, collapse = "")
@@ -162,8 +163,12 @@ testing <- function(x, type) {
   d <- cY * x
   vs <- cY[upper.tri(cY)]
   names(vs) <- paste0("vs", ind)
-  # Canonical correlation
-  cc <- sum(abs(d[upper.tri(d)]))
+  # Canonical correlation 
+  cc <- switch(type,
+         centroid = sum(abs(d[upper.tri(d)])),
+         horst = sum(d[upper.tri(d)]),
+         factorial = sum(d[upper.tri(d)]^2))
+    
   # Values of the design matrix
   vars <- result.sgcca$C[upper.tri(result.sgcca$C)]
   names(vars) <- paste0("var", ind)
