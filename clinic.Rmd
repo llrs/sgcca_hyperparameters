@@ -111,38 +111,17 @@ C_list2 <- C_list2[keep]
 
 # Evaluation of designs
 
+We first define a function to test the designs (with the help of the integration package):
 ```{r}
 testing <- function(x, type) {
   result.sgcca <- sgcca(A, x, c1 = shrinkage, ncomp = rep(1, length(A)), 
                        scheme = type, verbose = FALSE)
   
-  ind <- apply(which(upper.tri(result.sgcca$C), arr.ind = TRUE), 1, 
-               paste0, collapse = "")
-  
-  # Correlation between Y
-  Y <- simplify2array(result.sgcca$Y, higher = FALSE)
-  cY <- cor(Y)
-  d <- cY * result.sgcca$C
-  var <- cY[upper.tri(cY)]
-  names(var) <- paste0("vs", ind)
-  # Canonical correlation
-  cc <- switch(type,
-               centroid = sum(abs(d[upper.tri(d)])),
-               horst = sum(d[upper.tri(d)]),
-               factorial = sum(d[upper.tri(d)]^2))
-  # Values of the design matrix
-  vars <- result.sgcca$C[upper.tri(result.sgcca$C)]
-  names(vars) <- paste0("var", ind)
-  # weights used
-  weight <- sum(vars != 0)
-  names(weight) <- "weights"
-  
-  # Output
-  c(var, unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")]), cc1 = cc, 
-    vars, weight)
+  analyze(result.sgcca)
 }
 ```
 
+Now we can iterate alon all the designs:
 
 ```{r}
 out <- sapply(C_list2, testing, type = "centroid")

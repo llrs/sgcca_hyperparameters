@@ -84,6 +84,7 @@ keep <- check_design(C_list3)
 C_list3 <- C_list3[keep]
 ```
 
+We first define a function to test the designs (with the help of the integration package):
 
 ```{r}
 testing <- function(x, type) {
@@ -92,30 +93,8 @@ testing <- function(x, type) {
                                ncomp = c(1, 1, 1), 
                        scheme = type, verbose = FALSE)
   
-  ind <- apply(which(upper.tri(result.sgcca$C), arr.ind = TRUE), 1, 
-               paste0, collapse = "")
-  
-  # Correlation between Y
-  Y <- simplify2array(result.sgcca$Y, higher = FALSE)
-  cY <- cor(Y)
-  d <- cY * x
-  vs <- cY[upper.tri(cY)]
-  names(vs) <- paste0("vs", ind)
-  # Canonical correlation
-  cc <- switch(type,
-         centroid = sum(abs(d[upper.tri(d)])),
-         horst = sum(d[upper.tri(d)]),
-         factorial = sum(d[upper.tri(d)]^2))
-  # Values of the design matrix
-  vars <- result.sgcca$C[upper.tri(result.sgcca$C)]
-  names(vars) <- paste0("var", ind)
-  vars <- c(vars, "var11" = result.sgcca$C[1, 1])
-  weight <- sum(vars != 0)
-  names(weight) <- "weights"
-  
-  # Output
-  c(vs, unlist(result.sgcca$AVE[c("AVE_inner", "AVE_outer")]), cc1 = cc, 
-    vars, weight)
+  out <- analyze(result.sgcca)
+  c(out, "var11" = result.sgcca$C[1, 1])
 }
 ```
 
