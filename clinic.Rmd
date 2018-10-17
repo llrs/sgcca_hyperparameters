@@ -164,7 +164,7 @@ def %>%
   group_by(weights) %>% 
   add_count() %>% 
   dplyr::filter(AVE_inner == max(AVE_inner)) %>% 
-  arrange(desc(as.numeric(weights)), desc(AVE_inner)) %>% 
+  arrange(desc(AVE_inner), desc(as.numeric(weights))) %>% 
   select(-matches("vs"))
 ```
 We can see that the model with just 2 weights is the most accurate to explain the model.
@@ -257,6 +257,17 @@ plot(result.sgcca$Y[[1]][, 1], result.sgcca$Y[[2]][, 1], xlab = "GE", ylab = "CG
 
 ```{r}
 library("broom")
+lmC0 <- lm(AVE_inner~0+var12+var13+var14+var23+var24+var34, data = def)
+lmC <- lm(AVE_inner~0+var12*var13*var14*var23*var24*var34, data = def)
+anova(lmC, lmC0)
+glance(lmC)
+tidy(lmC) %>% arrange(desc(abs(estimate)))
+
+# Add the information we know 
+# (If weights equal 0, there is no information of the model)
+empty <- rep(0, ncol(def))
+names(empty) <- colnames(def)
+def <- rbind(def, empty)
 lmC0 <- lm(AVE_inner~0+var12+var13+var14+var23+var24+var34, data = def)
 lmC <- lm(AVE_inner~0+var12*var13*var14*var23*var24*var34, data = def)
 anova(lmC, lmC0)

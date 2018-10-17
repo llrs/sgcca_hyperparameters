@@ -238,6 +238,17 @@ lmIC <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def)
 anova(lmIC, lmIC0)
 glance(lmIC)
 tidy(lmIC) %>% arrange(desc(estimate))
+
+# Add the information we know 
+# (If weights equal 0, there is no information of the model)
+empty <- rep(0, ncol(def))
+names(empty) <- colnames(def)
+def <- rbind(def, empty)
+lmIC0 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
+lmIC <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def)
+anova(lmIC, lmIC0)
+glance(lmIC)
+tidy(lmIC) %>% arrange(desc(estimate))
 ```
 
 # Testing

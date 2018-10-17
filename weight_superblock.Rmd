@@ -178,6 +178,22 @@ lmS1b <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def[de
 anova(lmS1, lmS1b)
 glance(lmS1)
 tidy(lmS1) %>% arrange(desc(abs(estimate)))
+
+# Add the information we know 
+# (If weights equal 0, there is no information of the model)
+empty <- rep(0, ncol(def))
+names(empty) <- colnames(def)
+def <- rbind(def, empty)
+lmS0 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
+lmS <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def)
+anova(lmS0, lmS)
+glance(lmS)
+tidy(lmS) %>% arrange(desc(abs(estimate)))
+lmS1 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def[def$var11 == 0, ])
+lmS1b <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def[def$var11 == 0, ])
+anova(lmS1, lmS1b)
+glance(lmS1)
+tidy(lmS1) %>% arrange(desc(abs(estimate)))
 ```
 
 # Final model

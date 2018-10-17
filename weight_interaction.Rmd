@@ -243,6 +243,18 @@ lmI <- lm(AVE_inner ~0+var12*var13*var23*var11, data = def)
 anova(lmI, lmI0)
 glance(lmI)
 tidy(lmI) %>% arrange(desc(abs(estimate)))
+
+# Add the information we know 
+# (If weights equal 0, there is no information of the model)
+empty <- rep(0, ncol(def))
+names(empty) <- colnames(def)
+def <- rbind(def, empty)
+
+lmI0 <- lm(AVE_inner ~0+var12+var13+var23+var11, data = def) 
+lmI <- lm(AVE_inner ~0+var12*var13*var23*var11, data = def) 
+anova(lmI, lmI0)
+glance(lmI)
+tidy(lmI) %>% arrange(desc(abs(estimate)))
 ```
 
 ## Conclusions
