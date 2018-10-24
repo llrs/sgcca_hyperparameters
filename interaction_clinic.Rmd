@@ -238,9 +238,37 @@ design.final[2, 3] <- design.final[3, 2] <- 1/3
 design.final[1, 1] <- 1
 result.sgcca <- sgcca(A, design.final, c1 = shrinkage, ncomp = rep(2, length(A)), 
                        scheme = "centroid", verbose = FALSE)
+saveRDS(result.sgcca, "model3_best.RDS")
 plot(result.sgcca$Y[[1]][, 1], result.sgcca$Y[[2]][, 1], xlab = "GE", ylab = "CGH", 
      col = clinic$localisation)
 
+```
+
+```{r}
+l <- looIndex(size(A))
+loo_model <- function(x, model){
+  
+  RGCCA::sgcca(A = subsetData(A, x),
+               C = model, 
+               scheme = "centroid", 
+               verbose = FALSE, c1 = shrinkage
+  )
+}
+
+model3 <- diag(4)
+model3[1, ] <- 1
+model3[2, ] <- 1
+model3[, 1] <- 1
+model3[, 2] <- 1
+diag(model3) <- 0
+out <- sgcca(A, C = model3, c1 = shrinkage, ncomp = ncomp)
+saveRDS(out, "model3_sgcca.RDS")
+
+result.out <- lapply(l, loo_model, model = model3) 
+saveRDS(result.out, "loo-model3.RDS")
+
+result.out <- lapply(l, loo_model, model = design.final) 
+saveRDS(result.out, "loo-model3_best.RDS")
 ```
 
 
