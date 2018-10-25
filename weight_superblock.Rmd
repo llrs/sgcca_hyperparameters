@@ -52,11 +52,12 @@ D = matrix(0, nb_block, nb_block)
 D[, nb_block - 1] = 1 ; 
 D[nb_block - 1, ] = 1 ;
 diag(D) = 0
-
-sgcca.glioma = sgcca(B, D, c1 = c(.071,.2, 1/sqrt(NCOL(B[[3]])) + .2, 1),
+shrinkage <- c(.071,.2, 1/sqrt(NCOL(B[[3]])) + .2, 1)
+sgcca.glioma = sgcca(B, D, c1 = shrinkage,
     ncomp = c(rep(2, (length(B) - 1)),1),
     scheme = "centroid", scale = TRUE,
     verbose = FALSE)
+saveRDS(sgcca.glioma, "superblock_sgcca.RDS")
 glioma.superblock <- cbind.data.frame(sgcca.glioma$Y[[3]], Loc, Samples = rownames(sgcca.glioma$Y[[3]]))
 glioma.GE <- cbind.data.frame(sgcca.glioma$Y[[1]], Loc, Samples = rownames(sgcca.glioma$Y[[3]]))
 ggplot(glioma.superblock) +
@@ -182,15 +183,16 @@ We select the best model
 ```{r}
 nb_block = 4
 #length(B)
-D = matrix(0, nb_block, nb_block)
-D[2, 3] <- D[3, 2] <- D[1, 4] <- D[4, 1] <- 1/3
-D[1, 1] <- 1
-dimnames(D) <- list(names(B), names(B))
+D_best = matrix(0, nb_block, nb_block)
+D_best[2, 3] <- D_best[3, 2] <- D_best[1, 4] <- D_best[4, 1] <- 1/3
+D_best[1, 1] <- 1
+dimnames(D_best) <- list(names(B), names(B))
 
-sgcca.final = sgcca(B, D, c1 = c(.071,.2, 1/sqrt(NCOL(B[[3]])) + .2, 1),
+sgcca.final <-  sgcca(B, D_best, c1 = shrinkage,
     ncomp = c(rep(2, (length(B) - 1)),1),
     scheme = "centroid", scale = TRUE,
     verbose = FALSE)
+saveRDS(sgcca.final, "superblock_best.RDS")
 levels(Loc) <- c("hemisphere", "DIPG", "midline")
 final.superblock <- cbind.data.frame(sgcca.final$Y[[3]], Loc, Samples = rownames(sgcca.final$Y[[3]]))
 final.GE <- cbind.data.frame(sgcca.final$Y[[1]], Loc, Samples = rownames(sgcca.final$Y[[3]]))
@@ -206,6 +208,26 @@ ggplot(final.GE) +
   guides(col = guide_legend(title = "Localization"))
 ```
 
+
+```{r}
+l <- looIndex(size(B))
+loo_model <- function(x, model){
+  
+  RGCCA::sgcca(A = subsetData(B, x),
+               C = model, 
+               scheme = "centroid", 
+               verbose = FALSE, c1 = shrinkage
+  )
+}
+
+result.out <- lapply(l, loo_model, model = D) 
+saveRDS(result.out, "loo-superblock.RDS")
+
+result.out <- lapply(l, loo_model, model = D_best) 
+saveRDS(result.out, "loo-superblock_best.RDS")
+```
+
+
 ## Conclusions
 
 In general using only two weights leads to select models that account for more 
@@ -219,27 +241,6 @@ thus is reasonable to include in a model the interaction between copy number
 variation and gene expression, as well as it is unexpected that it might play a .
 huge role But we can see that its role is not neglibile 
 
-We can check them:
-```{r}
-C_model2 <- structure(c(0, 0, 1, 0, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
-    c("GE", "CGH", "y"), c("GE", "CGH", "y")))
-C_model3 <- structure(c(0, 0.1, 1, 0.1, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
-    c("GE", "CGH", "y"), c("GE", "CGH", "y")))
-
-centroid.2 <- sgcca(A, C_model2, c1 = c(.071,.2, 1), ncomp = ncomp, 
-      scheme = "centroid", verbose = FALSE)
-centroid.3 <- sgcca(A, C_model3, c1 = c(.071,.2, 1), ncomp = ncomp, 
-      scheme = "centroid", verbose = FALSE)
-plot(centroid.2$Y[[1]][, 1], centroid.2$Y[[2]][, 1], 
-     col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 2")
-plot(centroid.3$Y[[1]][, 1], centroid.3$Y[[2]][, 1], 
-     col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 3")
-```
-
-Note that there are few differences between them, both of them allow to 
-differentiate localization of the tumor by gene expression. Indeed, both of them
-select the same genes `r length(intersect(names(comp.GE.3)[comp.GE.3 != 0], names(comp.GE.2)[comp.GE.2 != 0]))`,
-but select different number of copy number variations (`r sum(comp.CGH.2 != 0)` and `r sum(comp.CGH.3 != 0)`, for model 2 and model 3), altough `r ength(intersect(names(comp.CGH.3)[comp.CGH.3 != 0], names(comp.CGH.2)[comp.CGH.2 != 0]))` are shared. 
 
 ## Session Info {-}
 

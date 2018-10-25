@@ -37,6 +37,8 @@ A[[3]] = A[[3]][, -3]
 # Prepare some preliminary design/weights
 C <-  matrix(c(0, 0, 1, 0, 0, 1, 1, 1, 0), 3, 3)
 dimnames(C) <- list(names(A), names(A))
+model2 <- C
+model3 <- subSymm(model2, 1, 2, 1)
 ```
 
 # Weights
@@ -350,10 +352,18 @@ C_model2 <- structure(c(0, 0, 1, 0, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimna
 C_model3 <- structure(c(0, 0.1, 1, 0.1, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
     c("GE", "CGH", "y"), c("GE", "CGH", "y")))
 
+centroid.2 <- sgcca(A, model2, c1 = shrinkage, ncomp = ncomp, 
+      scheme = "centroid", verbose = FALSE)
+saveRDS(centroid.2, "model2_sgcca.RDS")
+centroid.3 <- sgcca(A, model3, c1 = shrinkage, ncomp = ncomp, 
+      scheme = "centroid", verbose = FALSE)
+saveRDS(centroid.3, "model3_sgcca.RDS")
 centroid.2 <- sgcca(A, C_model2, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
+saveRDS(centroid.2, "model2_best.RDS")
 centroid.3 <- sgcca(A, C_model3, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
+saveRDS(centroid.3, "model3_best.RDS")
 plot(centroid.2$Y[[1]][, 1], centroid.2$Y[[2]][, 1], 
      col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 2")
 plot(centroid.3$Y[[1]][, 1], centroid.3$Y[[2]][, 1], 
@@ -364,6 +374,33 @@ Note that there are few differences between them, both of them allow to
 differentiate localization of the tumor by gene expression. Indeed, both of them
 select the same genes `r length(intersect(names(comp.GE.3)[comp.GE.3 != 0], names(comp.GE.2)[comp.GE.2 != 0]))`,
 but select different number of copy number variations (`r sum(comp.CGH.2 != 0)` and `r sum(comp.CGH.3 != 0)`, for model 2 and model 3), altough `r ength(intersect(names(comp.CGH.3)[comp.CGH.3 != 0], names(comp.CGH.2)[comp.CGH.2 != 0]))` are shared. 
+
+```{r}
+# SGCCA of the selected model leaving one sample each time out of order.
+l <- looIndex(size(A))
+loo_model <- function(x, model){
+  
+  RGCCA::sgcca(A = subsetData(A, x),
+               C = model, 
+               scheme = "centroid", 
+               verbose = FALSE, c1 = shrinkage
+  )
+}
+C_model2_orig <- subSymm(C_model2, 2, 3, 1)
+result.out <- lapply(l, loo_model, model = C_model2_orig) 
+saveRDS(result.out, "loo-model2.RDS")
+
+C_model3_orig <- subSymm(C_model2_orig, 1, 2, 1)
+result.out <- lapply(l, loo_model, model = C_model3_orig) 
+saveRDS(result.out, "loo-model3.RDS")
+
+result.out <- lapply(l, loo_model, model = C_model2) 
+saveRDS(result.out, "loo-model2_best.RDS")
+
+result.out <- lapply(l, loo_model, model = C_model3) 
+saveRDS(result.out, "loo-model3_best.RDS")
+```
+
 
 ## Session Info {-}
 
