@@ -325,8 +325,10 @@ C_model2 <- matrix(0, ncol = 3L, nrow = 3L, dimnames = list(
     c("GE", "CGH", "y"), c("GE", "CGH", "y")))
 m2 <- factorial_weights[factorial_weights$weights == "2", ]
 m3 <- factorial_weights[factorial_weights$weights == "3", ]
-C_model2 <- symm(C_model2, m2[which.max(m2$AVE_inner), grep("var", colnames(m2))])
-C_model3 <- symm(C_model2, m3[which.max(m3$AVE_inner), grep("var", colnames(m3))])
+C_model2 <- symm(C_model2, 
+                 m2[which.max(m2$AVE_inner), grep("var", colnames(m2))])
+C_model3 <- symm(C_model2, 
+                 m3[which.max(m3$AVE_inner), grep("var", colnames(m3))])
 
 centroid.2 <- sgcca(A, model2, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)

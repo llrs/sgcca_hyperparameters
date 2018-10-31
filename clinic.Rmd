@@ -230,7 +230,7 @@ design.final <- symm(design.final,
                      def[which.max(def$AVE_inner), grep("var", colnames(def))])
 result.sgcca <- sgcca(A, design.final, c1 = shrinkage, ncomp = rep(2, length(A)), 
                        scheme = "centroid", verbose = FALSE)
-saveRDS(result.sgcca, "model3_sgcca.RDS")
+saveRDS(result.sgcca, "model3_clinic_best_sgcca.RDS")
 plot(result.sgcca$Y[[1]][, 1], result.sgcca$Y[[2]][, 1], xlab = "GE", ylab = "CGH", 
      col = clinic$localisation)
 
@@ -244,7 +244,7 @@ loo_model <- function(x, model){
   )
 }
 result.out <- lapply(l, loo_model, model = design.final) 
-saveRDS(result.out, "loo-model3_best.RDS")
+saveRDS(result.out, "loo-model3_clinic_best.RDS")
 ```
 
 # SessionInfo {-}

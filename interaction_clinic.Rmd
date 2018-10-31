@@ -215,7 +215,8 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 # TODO check this design
 design.final <- matrix(0, nrow = length(A), ncol = length(A), 
                        dimnames = list(names(A), names(A)))
-design.final <- symm(design.final, def[which.max(def$AVE_inner), grep("var", colnames(def))])
+design.final <- symm(design.final, 
+                     def[which.max(def$AVE_inner), grep("var", colnames(def))])
 result.sgcca <- sgcca(A, design.final, c1 = shrinkage, ncomp = rep(2, length(A)), 
                        scheme = "centroid", verbose = FALSE)
 saveRDS(result.sgcca, "model3_best.RDS")
