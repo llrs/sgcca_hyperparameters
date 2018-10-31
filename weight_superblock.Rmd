@@ -88,6 +88,8 @@ C_list3 <- C_list3[keep]
 We first define a function to test the designs (with the help of the integration package):
 
 ```{r}
+keep <- vapply(C_list3, correct, logical(1L))
+design <- C_list3[keep]
 testing <- function(x, type) {
   result.sgcca <- RGCCA::sgcca(B, x, 
                                c1 = c(.071, .2, 1/sqrt(NCOL(B[[3]])) + .2, 1), 
@@ -104,7 +106,7 @@ testing <- function(x, type) {
 Using the centroid scheme
 
 ```{r centroid}
-out <- sapply(C_list3, testing, type = "centroid", USE.NAMES = FALSE)
+out <- sapply(design, testing, type = "centroid", USE.NAMES = FALSE)
 out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
@@ -143,37 +145,6 @@ s2 <- p + geom_point(aes(var2, AVE_inner, col = weights)) + ylab("") + guides(co
 s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(col = FALSE) +
   geom_smooth(aes(var3, AVE_inner, col = weights))
 (r1 + r2 + r3) / (q1 + q2 + q3) / (s1 + s2 + s3)
-```
-
-We can see the influence of each weight on the inner AVE via modeling it.
-```{r}
-library("broom")
-lmS0 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
-lmS <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def)
-anova(lmS0, lmS)
-glance(lmS)
-tidy(lmS) %>% arrange(desc(abs(estimate)))
-lmS1 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def[def$var11 == 0, ])
-lmS1b <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def[def$var11 == 0, ])
-anova(lmS1, lmS1b)
-glance(lmS1)
-tidy(lmS1) %>% arrange(desc(abs(estimate)))
-
-# Add the information we know 
-# (If weights equal 0, there is no information of the model)
-empty <- rep(0, ncol(def))
-names(empty) <- colnames(def)
-def <- rbind(def, empty)
-lmS0 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
-lmS <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def)
-anova(lmS0, lmS)
-glance(lmS)
-tidy(lmS) %>% arrange(desc(abs(estimate)))
-lmS1 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def[def$var11 == 0, ])
-lmS1b <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def[def$var11 == 0, ])
-anova(lmS1, lmS1b)
-glance(lmS1)
-tidy(lmS1) %>% arrange(desc(abs(estimate)))
 ```
 
 # Final model
@@ -225,6 +196,15 @@ saveRDS(result.out, "loo-superblock.RDS")
 
 result.out <- lapply(l, loo_model, model = D_best) 
 saveRDS(result.out, "loo-superblock_best.RDS")
+
+boot <- boot_sgcca(B, D, shrinkage, 1000)
+saveRDS(boot, file = "bootstrap_superblock.RDS") # Save
+# boot_evaluate(boot$STAB) # Plot some models
+
+boot <- boot_sgcca(B, D_best, shrinkage, 1000)
+saveRDS(boot, file = "bootstrap_superblock_best.RDS")
+# boot_evaluate(boot$STAB)
+
 ```
 
 

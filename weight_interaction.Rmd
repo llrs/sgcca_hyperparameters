@@ -167,7 +167,9 @@ testing <- function(x, type) {
 Using the centroid scheme
 
 ```{r centroid}
-out <- sapply(C_list3, testing, type = "centroid", USE.NAMES = FALSE)
+keep <- vapply(C_list3, correct, logical(1L))
+design <- C_list3[correct]
+out <- sapply(design, testing, type = "centroid", USE.NAMES = FALSE)
 out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
@@ -210,28 +212,6 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 (r1 + r2 + r3) / (q1 + q2 + q3) / (s1 + s2 + s3)
 ```
 
-
-```{r}
-library("broom")
-lmI0 <- lm(AVE_inner ~0+var12+var13+var23+var11, data = def) 
-lmI <- lm(AVE_inner ~0+var12*var13*var23*var11, data = def) 
-anova(lmI, lmI0)
-glance(lmI)
-tidy(lmI) %>% arrange(desc(abs(estimate)))
-
-# Add the information we know 
-# (If weights equal 0, there is no information of the model)
-empty <- rep(0, ncol(def))
-names(empty) <- colnames(def)
-def <- rbind(def, empty)
-
-lmI0 <- lm(AVE_inner ~0+var12+var13+var23+var11, data = def) 
-lmI <- lm(AVE_inner ~0+var12*var13*var23*var11, data = def) 
-anova(lmI, lmI0)
-glance(lmI)
-tidy(lmI) %>% arrange(desc(abs(estimate)))
-```
-
 ## Conclusions
 
 In general using only two weights leads to select models that account for more 
@@ -247,10 +227,12 @@ huge role But we can see that its role is not neglibile
 
 We can check them:
 ```{r}
-C_model2 <- structure(c(0, 0, 1, 0, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
+C_model2 <- matrix(0, ncol = 3L, nrow = 3L, dimnames = list(
     c("GE", "CGH", "y"), c("GE", "CGH", "y")))
-C_model3 <- structure(c(0, 0.1, 1, 0.1, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
-    c("GE", "CGH", "y"), c("GE", "CGH", "y")))
+m2 <- def[def$weights == "2", ]
+m3 <- def[def$weights == "3", ]
+C_model2 <- symm(C_model2, m2[which.max(m2$AVE_inner), grep("var", colnames(m2))])
+C_model3 <- symm(C_model2, m3[which.max(m3$AVE_inner), grep("var", colnames(m3))])
 centroid.2 <- sgcca(A, C_model2, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
 centroid.3 <- sgcca(A, C_model3, c1 = shrinkage, ncomp = ncomp, 
@@ -272,12 +254,12 @@ but select different number of copy number variations (`r sum(comp.CGH.2 != 0)` 
 
 # Model 2
 boot <- boot_sgcca(A, C_model2, shrinkage, 1000) # Bootstraps
-saveRDS(boot, file = "bootstrap_model2.RDS") # Save
+saveRDS(boot, file = "bootstrap_model2_best.RDS") # Save
 boot_evaluate(boot$STAB) # Plot some models
 
 # Model 3
 boot <- boot_sgcca(A, C_model3, shrinkage, 1000)
-saveRDS(boot, file = "bootstrap_model3.RDS")
+saveRDS(boot, file = "bootstrap_model3_best.RDS")
 boot_evaluate(boot$STAB)
 ```
 

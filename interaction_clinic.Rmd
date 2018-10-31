@@ -113,7 +113,9 @@ testing <- function(x, type) {
 
 
 ```{r}
-out <- sapply(C_list3, testing, type = "centroid")
+keep <- vapply(C_list3, correct, logical(1L))
+design <- C_list3[keep]
+out <- sapply(design, testing, type = "centroid")
 out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
@@ -207,35 +209,13 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 (r1 + r2 + r3) / (q1 + q2 + q3) / (s1 + s2 + s3)
 ```
 
-
-```{r}
-library("broom")
-lmIC0 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
-lmIC <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def)
-anova(lmIC, lmIC0)
-glance(lmIC)
-tidy(lmIC) %>% arrange(desc(estimate))
-
-# Add the information we know 
-# (If weights equal 0, there is no information of the model)
-empty <- rep(0, ncol(def))
-names(empty) <- colnames(def)
-def <- rbind(def, empty)
-lmIC0 <- lm(AVE_inner~0+var12+var13+var23+var14+var23+var34+var11, data = def)
-lmIC <- lm(AVE_inner~0+var12*var13*var23*var14*var23*var34*var11, data = def)
-anova(lmIC, lmIC0)
-glance(lmIC)
-tidy(lmIC) %>% arrange(desc(estimate))
-```
-
 # Testing
 
 ```{r}
+# TODO check this design
 design.final <- matrix(0, nrow = length(A), ncol = length(A), 
                        dimnames = list(names(A), names(A)))
-design.final[1, 4] <- design.final[4, 1] <- 1
-design.final[2, 3] <- design.final[3, 2] <- 1/3
-design.final[1, 1] <- 1
+design.final <- symm(design.final, def[which.max(def$AVE_inner), grep("var", colnames(def))])
 result.sgcca <- sgcca(A, design.final, c1 = shrinkage, ncomp = rep(2, length(A)), 
                        scheme = "centroid", verbose = FALSE)
 saveRDS(result.sgcca, "model3_best.RDS")
@@ -268,7 +248,7 @@ result.out <- lapply(l, loo_model, model = model3)
 saveRDS(result.out, "loo-model3.RDS")
 
 result.out <- lapply(l, loo_model, model = design.final) 
-saveRDS(result.out, "loo-model3_best.RDS")
+saveRDS(result.out, "loo-model3_interaction_best.RDS")
 ```
 
 

@@ -42,18 +42,3 @@ plot3b <- comm +
   ylab("") +
   ggtitle("By tau  CGH")
 plot1b + plot2b + plot3b
-
-library("broom")
-library("dplyr")
-lmM <- lm(AVE_inner ~ 0+GE^3*log10(CGH)*y^2, data = tau)
-#similar output to log10 everything or guiving polinomials
-glance(lmM)
-tidy(lmM) %>% arrange(desc(abs(estimate)))
-fit.loess <- loess(AVE_inner ~ 0+GE*CGH*y, data = tau)
-plot1c <- plot1b +
-  geom_smooth(aes(y, AVE_inner), formula = ~ 0+GE^3*log10(CGH)*y^2, tau)
-plot2c <- plot2b +
-  geom_smooth(aes(GE, AVE_inner), formula = ~ 0+GE^3*log10(CGH)*y^2, tau)
-plot3c <- plot3b +
-  geom_smooth(aes(CGH, AVE_inner), formula = ~ 0+GE^3*log10(CGH)*y^2, tau)
-plot1c + plot2c + plot3c

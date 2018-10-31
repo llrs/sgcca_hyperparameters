@@ -149,7 +149,8 @@ testing <- function(x, type) {
   
   analyze(result.sgcca)
 }
-
+keep <- vapply(C_list2, correct, logical(1L))
+design <- C_list2[keep]
 # Design matrix:
 # 0.0 var12 var13
 # var12 0.0  var23
@@ -161,23 +162,13 @@ testing <- function(x, type) {
 Using the centroid scheme
 
 ```{r centroid}
-out <- sapply(C_list2, testing, type = "centroid", USE.NAMES = FALSE)
+out <- sapply(design, testing, type = "centroid", USE.NAMES = FALSE)
 out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
 centroid_weights <- droplevels(def[!offset, ])
 saveRDS(centroid_weights, file = "centroid_weights.RDS")
-```
-
-
-```{r}
-library("broom")
-lmWC0 <- lm(AVE_inner ~ 0+var3+var2+var1, data=centroid_weights)
-lmWC <- lm(AVE_inner ~ 0+var3*var2*var1, data=centroid_weights)
-anova(lmWC, lmWC0)
-glance(lmWC)
-tidy(lmWC) %>% arrange(desc(estimate))
 ```
 
 We can plot them
@@ -220,22 +211,13 @@ We can do the same with horst scheme.
 Using horst scheme
 
 ```{r horst}
-out <- sapply(C_list2, testing, type = "horst")
+out <- sapply(design, testing, type = "horst")
 out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
 horst_weights <- droplevels(def[!offset, ])
 saveRDS(horst_weights, file = "horst_weights.RDS")
-```
-
-
-```{r}
-lmWH0 <- lm(AVE_inner ~ 0+var3+var2+var1, data=horst_weights)
-lmWH <- lm(AVE_inner ~ 0+var3*var2*var1, data=horst_weights)
-anova(lmWH0, lmWH)
-glance(lmWH)
-tidy(lmWH) %>% arrange(desc(estimate))
 ```
 
 ```{r plot_horst}
@@ -270,21 +252,13 @@ horst_weights %>%
 Using the factorial scheme:
 
 ```{r factorial}
-out <- sapply(C_list2, testing, type = "factorial")
+out <- sapply(design, testing, type = "factorial")
 out2 <- t(out)
 def <- as.data.frame(out2)
 def$weights <- as.factor(def$weights)
 offset <- is.na(def$AVE_inner)
 factorial_weights <- droplevels(def[!offset, ])
 saveRDS(factorial_weights, file = "factorial_weights.RDS")
-```
-
-```{r}
-lmWF0 <- lm(AVE_inner ~ 0+var3+var2+var1, data=factorial_weights)
-lmWF <- lm(AVE_inner ~ 0+var3*var2*var1, data=factorial_weights)
-anova(lmWF0, lmWF)
-glance(lmWF)
-tidy(lmWF) %>% arrange(desc(abs(estimate)))
 ```
 
 ```{r plot_factorial}
@@ -347,10 +321,12 @@ huge role But we can see that its role is not neglibile
 
 We can check them:
 ```{r}
-C_model2 <- structure(c(0, 0, 1, 0, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
+C_model2 <- matrix(0, ncol = 3L, nrow = 3L, dimnames = list(
     c("GE", "CGH", "y"), c("GE", "CGH", "y")))
-C_model3 <- structure(c(0, 0.1, 1, 0.1, 0, 0.1, 1, 0.1, 0), .Dim = c(3L, 3L), .Dimnames = list(
-    c("GE", "CGH", "y"), c("GE", "CGH", "y")))
+m2 <- factorial_weights[factorial_weights$weights == "2", ]
+m3 <- factorial_weights[factorial_weights$weights == "3", ]
+C_model2 <- symm(C_model2, m2[which.max(m2$AVE_inner), grep("var", colnames(m2))])
+C_model3 <- symm(C_model2, m3[which.max(m3$AVE_inner), grep("var", colnames(m3))])
 
 centroid.2 <- sgcca(A, model2, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
