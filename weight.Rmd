@@ -335,13 +335,13 @@ centroid.2 <- sgcca(A, model2, c1 = shrinkage, ncomp = ncomp,
 saveRDS(centroid.2, "model2_sgcca.RDS")
 centroid.3 <- sgcca(A, model3, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
-saveRDS(centroid.3, "model3_sgcca.RDS")
+saveRDS(centroid.3, "model3_orig_sgcca.RDS")
 centroid.2 <- sgcca(A, C_model2, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
 saveRDS(centroid.2, "model2_best.RDS")
 centroid.3 <- sgcca(A, C_model3, c1 = shrinkage, ncomp = ncomp, 
       scheme = "centroid", verbose = FALSE)
-saveRDS(centroid.3, "model3_best.RDS")
+saveRDS(centroid.3, "model3_orig.RDS")
 plot(centroid.2$Y[[1]][, 1], centroid.2$Y[[2]][, 1], 
      col = Loc, pch = 16, xlab = "GE", ylab = "CGH", main = "Model 2")
 plot(centroid.3$Y[[1]][, 1], centroid.3$Y[[2]][, 1], 
@@ -370,13 +370,13 @@ saveRDS(result.out, "loo-model2.RDS")
 
 C_model3_orig <- subSymm(C_model2_orig, 1, 2, 1)
 result.out <- lapply(l, loo_model, model = C_model3_orig) 
-saveRDS(result.out, "loo-model3.RDS")
+saveRDS(result.out, "loo-model3_orig.RDS")
 
 result.out <- lapply(l, loo_model, model = C_model2) 
 saveRDS(result.out, "loo-model2_best.RDS")
 
-result.out <- lapply(l, loo_model, model = C_model3) 
-saveRDS(result.out, "loo-model3_best.RDS")
+result.out <- lapply(l, loo_model, model = C_model3_orig) 
+saveRDS(result.out, "loo-model3_orig_best.RDS")
 ```
 
 
