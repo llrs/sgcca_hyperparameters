@@ -155,8 +155,8 @@ We select the best model
 nb_block = 4
 #length(B)
 D_best = matrix(0, nb_block, nb_block)
-D_best[2, 3] <- D_best[3, 2] <- D_best[1, 4] <- D_best[4, 1] <- 1/3
-D_best[1, 1] <- 1
+columns <- grep("var", colnames(def))
+D_best <- symm(D_best, def[which.max(def$AVE_inner), columns])
 dimnames(D_best) <- list(names(B), names(B))
 
 sgcca.final <-  sgcca(B, D_best, c1 = shrinkage,
@@ -198,7 +198,7 @@ result.out <- lapply(l, loo_model, model = D_best)
 saveRDS(result.out, "loo-superblock_best.RDS")
 
 boot <- boot_sgcca(B, D, shrinkage, 1000)
-saveRDS(boot, file = "bootstrap_superblock.RDS") # Save
+saveRDS(boot, file = "bootstrap_superblock.RDS")
 # boot_evaluate(boot$STAB) # Plot some models
 
 boot <- boot_sgcca(B, D_best, shrinkage, 1000)

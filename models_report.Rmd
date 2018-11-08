@@ -25,7 +25,7 @@ model3 <- readRDS("model3_sgcca.RDS")
 model3_loo <- readRDS("loo-model3.RDS")
 
 model3_best <- readRDS("model3_best.RDS")
-model3_best_loo <- readRDS("loo-model3_best.RDS")
+model3_best_loo <- readRDS("loo-model3_interaction_best.RDS")
 
 superblock <- readRDS("superblock_sgcca.RDS")
 superblock_loo <- readRDS("loo-superblock.RDS")
@@ -62,9 +62,9 @@ m_sem <- function(model, loo) {
 Model, and mean of the LOO procedure and the SEM:
 
 ```{r report}
-m_sem(model2, model2_loo) # Check
+m_sem(model2, model2_loo) 
 m_sem(model2_best, model2_best_loo)
-m_sem(model3, model3_loo) # Check
+m_sem(model3, model3_loo) 
 m_sem(model3_best, model3_best_loo)
 m_sem(superblock, superblock_loo)
 m_sem(superblock_best, superblock_best_loo)

@@ -148,9 +148,6 @@ def %>%
   arrange(desc(AVE_inner), desc(as.numeric(weights))) %>% 
   select(-matches("vs"))
 ```
-We can see that the model with just 2 weights is the most accurate to explain the model.
-Which is the one where gene expression is related to localization and CGH is related to the demographics.
-We see that the most complex model doesn't mean more explanation of the variables.
 We can look at what happens at the extremes, when the interaction is zero:
 ```{r}
 o <- sapply(def[, 10:15], function(x){
