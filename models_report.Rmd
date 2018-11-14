@@ -135,6 +135,10 @@ df <- as_tibble(df)
 ```
 
 ```{r}
+# Set the theme
+theme_set(theme_bw())
+theme_update(strip.background = element_blank())
+
 df %>% 
   filter(Component == "comp1") %>% 
   ggplot() +
@@ -143,15 +147,15 @@ df %>%
   labs(title = "Samples by model", 
        subtitle = "Colored by localization",
        caption = "Glioma dataset", 
-       col = "Localization") + 
-  theme_grey() %+replace% 
-  theme(panel.background = element_rect(fill = "white", colour = NA), 
-        panel.border = element_rect(fill = NA, colour = "grey20"), 
-        panel.grid = element_line(colour = "grey92"),
-        panel.grid.minor = element_line(size = rel(0.5)),
-        strip.background = element_blank(), 
-        legend.key = element_rect(fill = "white", colour = NA), 
-        complete = TRUE
-  ) 
+       col = "Localization")
+df %>% 
+  filter(Component == "comp1") %>% 
+  ggplot() +
+  geom_point(aes(GE, CGH, col = Sex)) +
+  facet_wrap(~Model, scales = "free") + 
+  labs(title = "Samples by model", 
+       subtitle = "Colored by sex",
+       caption = "Glioma dataset", 
+       col = "Sex")
 ```
 
