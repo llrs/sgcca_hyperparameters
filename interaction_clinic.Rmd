@@ -242,6 +242,7 @@ model3[2, ] <- 1
 model3[, 1] <- 1
 model3[, 2] <- 1
 diag(model3) <- 0
+ncomp <- rep(2, length(A))
 out <- sgcca(A, C = model3, c1 = shrinkage, ncomp = ncomp)
 saveRDS(out, "model3_sgcca.RDS")
 
