@@ -25,3 +25,8 @@ ggviolin(df, x = "Classification", y = "AVE_inner") +
   ylab("inner AVE") +
   xlab("Study-interaction") +
   ggtitle("Effect of the interaction within GE")
+
+library("dplyr")
+df %>%
+  group_by(Interaction, Type) %>%
+  summarise(mean(AVE_inner), sd(AVE_inner), max(AVE_inner), min(AVE_inner))
