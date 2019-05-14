@@ -19,7 +19,9 @@ plot2 <- comm0 +
   guides(color = guide_legend(title = "tau"),
          fill = FALSE) +
   ggtitle("Colored by tau of GE")
-plot1 + plot2
+p1 <- plot1 + plot2
+
+ggsave("Figures/Figure1.png", plot = p1)
 
 
 comm <- ggplot(tau) +
