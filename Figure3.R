@@ -88,7 +88,7 @@ theme_update(strip.background = element_blank(),
 figure3 <- df %>%
   filter(Component == "comp1") %>%
   ggplot() +
-  geom_point(aes(GE, CGH, col = as.factor(Loc))) +
+  geom_point(aes(GE, CGH, col = as.factor(Loc)), size = 0.5) +
   facet_wrap(~Model, scales = "free") +
   labs(col = "Localization", x = "Transcriptome", y = "CGH") +
   scale_y_continuous(breaks = seq(-1, 0.75, by = 0.25)) +

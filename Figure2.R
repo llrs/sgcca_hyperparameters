@@ -6,22 +6,23 @@ theme_set(theme_bw())
 comm0 <- ggplot(tau, aes(y, AVE_inner)) +
   geom_point() +
   ylab("inner AVE") +
-  xlab("tau.y") +
-  scale_colour_viridis_c() +
-  scale_fill_gradient()
+  xlab("tau y") +
+  scale_fill_viridis_c()
+  scale_color_viridis_c()
 plot1 <- comm0 +
   geom_point(aes(fill = CGH, color = CGH)) +
   guides(color = FALSE, fill = FALSE) +
-  ggtitle("Colored by tau of CGH")
+  labs(title = "Colored by tau of CGH")
 plot2 <- comm0 +
-  ylab("") +
   geom_point(aes(color = GE, fill = GE)) +
-  guides(color = guide_legend(title = "tau"),
-         fill = FALSE) +
-  ggtitle("Colored by tau of GE")
-p1 <- plot1 + plot2
-
-ggsave("Figures/Figure1.png", plot = p1)
+  guides(fill = FALSE) +
+  labs(title = "Colored by tau of GE", color = "tau") +
+  theme( axis.text.y = element_blank(),
+         axis.ticks.y = element_blank(),
+         axis.title.y = element_blank())
+p1 <- plot1 + plot2 + plot_annotation(tag_levels = "A")
+p1
+ggsave("Figures/Figure1.png", plot = p1, width = 170, dpi = 300, units = "mm")
 
 
 comm <- ggplot(tau) +

@@ -19,14 +19,13 @@ my_comparisons <- list(c("Superblock-No", "Superblock-Yes"),
                        c("Superblock-No", "Weights-No"),
                        c("Weights-Yes", "Superblock-Yes"))
 
-figure4 <- ggviolin(df, x = "Classification", y = "AVE_inner") +
+ggviolin(df, x = "Classification", y = "AVE_inner") +
   stat_compare_means(comparisons = my_comparisons, paired = FALSE) + # Pairwise comparisons p-value
   grids() +
   ylab("inner AVE") +
   xlab("Study-interaction") +
   ggtitle("Effect of the interaction within GE")
 
-ggsave("Figures/Figure4.png", figure4)
 
 library("dplyr")
 df %>%
