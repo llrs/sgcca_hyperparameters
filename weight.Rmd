@@ -178,7 +178,7 @@ p <- ggplot(centroid_weights)
 r1 <- p + geom_point(aes(cc1, AVE_inner, col = weights)) + guides(col = FALSE)
 r2 <- p + geom_point(aes(cc1, AVE_outer, col = weights)) + guides(col = FALSE)
 r3 <- p + geom_count(aes(AVE_inner, AVE_outer, col = weights))
-q1 <- p + geom_point(aes(var1, AVE_outer, col = weights))  + guides(col = FALSE) +
+q1 <- p + geom_point(aes(var12, AVE_outer, col = weights))  + guides(col = FALSE) +
   geom_smooth(aes(var2, AVE_outer, col = weights))
 q2 <- p + geom_point(aes(var2, AVE_outer, col = weights)) + ylab("") + guides(col = FALSE) +
   geom_smooth(aes(var2, AVE_outer, col = weights))
