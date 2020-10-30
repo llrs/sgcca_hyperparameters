@@ -46,6 +46,10 @@ Testing the tau effect on the AVE
   1 / sqrt(ncol(x))
 }))
 taus <- lapply(min_shrinkage, seq, to = 1, length.out = 10)
+# ts <- lapply(A, tau.estimate) # On the computer
+ts <- c(GE = 0.503293099215374, CGH = 0.636243186088126, y = 0.0398631441261977)
+taus[["GE"]] <- c(taus[["GE"]], ts["GE"])
+taus[["CGH"]] <- c(taus[["CGH"]], ts["CGH"])
 taus.combn <- expand.grid(taus)
 keep <- apply(taus.combn, 1, function(x){sum(x != 0)})
 taus.combn <- taus.combn[keep >= 2, ]
