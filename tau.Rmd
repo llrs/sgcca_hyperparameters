@@ -83,13 +83,13 @@ sgcca_eval <- function(x, scheme){
 ```
 
 ```{r centroid}
-# out <- apply(taus.combn, 1, sgcca_eval, scheme = "centroid")
-# centroid <- cbind.data.frame(t(out), taus.combn)
-# saveRDS(centroid, "centroid_tau.RDS")
+out <- apply(taus.combn, 1, sgcca_eval, scheme = "centroid")
+centroid <- cbind.data.frame(t(out), taus.combn)
+saveRDS(centroid, "centroid_tau.RDS")
 library("dplyr")
 library("broom")
-# centroid %>% 
-#   filter(AVE_inner == max(AVE_inner))
+centroid %>%
+  filter(AVE_inner == max(AVE_inner))
 ```
 
 ```{r}
