@@ -83,21 +83,22 @@ sgcca_eval <- function(x, scheme){
 ```
 
 ```{r centroid}
-out <- apply(taus.combn, 1, sgcca_eval, scheme = "centroid")
-centroid <- cbind.data.frame(t(out), taus.combn)
-saveRDS(centroid, "centroid_tau.RDS")
+# out <- apply(taus.combn, 1, sgcca_eval, scheme = "centroid")
+# centroid <- cbind.data.frame(t(out), taus.combn)
+# saveRDS(centroid, "centroid_tau.RDS")
 library("dplyr")
-centroid %>% 
-  filter(AVE_inner == max(AVE_inner))
+library("broom")
+# centroid %>% 
+#   filter(AVE_inner == max(AVE_inner))
 ```
 
 ```{r}
-centroid <- cbind(centroid, scheme = "centroid")
-lmC0 <- lm(AVE_inner ~ 0+GE+CGH+y, data = centroid)
-lmC <- lm(AVE_inner ~ 0+GE*CGH*y, data = centroid)
-anova(lmC, lmC0)
-glance(lmC)
-tidy(lmC) %>% arrange(desc(abs(estimate)))
+# centroid <- cbind(centroid, scheme = "centroid")
+# lmC0 <- lm(AVE_inner ~ 0+GE+CGH+y, data = centroid)
+# lmC <- lm(AVE_inner ~ 0+GE*CGH*y, data = centroid)
+# anova(lmC, lmC0)
+# glance(lmC)
+# tidy(lmC) %>% arrange(desc(abs(estimate)))
 ```
 
 ```{r factorial}
