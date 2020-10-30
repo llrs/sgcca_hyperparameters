@@ -212,7 +212,6 @@ s3 <- p + geom_point(aes(var3, AVE_inner, col = weights)) + ylab("") + guides(co
 # Testing
 
 ```{r}
-# TODO check this design
 design.final <- matrix(0, nrow = length(A), ncol = length(A), 
                        dimnames = list(names(A), names(A)))
 design.final <- symm(design.final, 
@@ -244,7 +243,7 @@ model3[, 2] <- 1
 diag(model3) <- 0
 ncomp <- rep(2, length(A))
 out <- sgcca(A, C = model3, c1 = shrinkage, ncomp = ncomp)
-saveRDS(out, "model3_sgcca.RDS")
+saveRDS(out, "model3_sgcca_base.RDS")
 
 result.out <- lapply(l, loo_model, model = model3) 
 saveRDS(result.out, "loo-model3.RDS")

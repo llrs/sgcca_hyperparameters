@@ -10,7 +10,7 @@ model2_loo <- readRDS("loo-model2.RDS")
 model2_best <- readRDS("model2_best.RDS")
 model2_best_loo <- readRDS("loo-model2_best.RDS")
 
-model3 <- readRDS("model3_sgcca.RDS")
+model3 <- readRDS("model3_sgcca_base.RDS")
 model3_loo <- readRDS("loo-model3.RDS")
 
 model3_best <- readRDS("model3_best.RDS")
