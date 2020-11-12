@@ -1,8 +1,42 @@
 library("ggplot2")
 library("patchwork")
+library("dplyr")
 
 tau <- readRDS("factorial_tau.RDS")
 theme_set(theme_bw())
+
+
+plot_tau2AVE <- function(data, title) {
+  limits <- c(0.45, 0.65)
+  p1 <- data %>%
+    group_by(GE, y) %>%
+    summarize(AVE_inner = median(AVE_inner)) %>%
+    ungroup() %>%
+    ggplot() +
+    geom_point(aes(GE, y, col = AVE_inner)) +
+    scale_color_viridis_c(limits = limits) +
+    theme_minimal() +
+    labs(col = "inner AVE") +
+    scale_y_continuous(position = "right") +
+    theme(axis.title.y.right = element_text(angle = 0, vjust = 0.5, hjust = 1))
+
+  p2 <- data %>%
+    group_by(CGH, y) %>%
+    summarize(AVE_inner = median(AVE_inner)) %>%
+    ggplot() +
+    geom_point(aes(CGH, y, col = AVE_inner)) +
+    scale_color_viridis_c(limits = limits) +
+    theme_minimal() +
+    labs(col = "inner AVE") +
+    theme(axis.title.y = element_blank())
+  p1 + p2 +  plot_layout(guides = 'collect')  +
+    plot_annotation(tag_levels = "A", title = title)
+
+}
+
+p3 <- plot_tau2AVE(tau, "Inner AVE depending on tau")
+ggsave("Figures/Figure1c.tiff", plot = p3, width = 170, dpi = 300, units = "mm")
+
 comm0 <- ggplot(tau, aes(y, AVE_inner)) +
   ylab("inner AVE") +
   xlab("tau y") +
@@ -24,7 +58,7 @@ p1 <- plot1 + plot2 + plot_annotation(tag_levels = "A")
 p1
 ggsave("Figures/Figure1.png", plot = p1, width = 170, dpi = 300, units = "mm")
 
-
+factorial <- tau
 # See the rank on the AVE_inner of those with closer to the tau.estimate
 factorial %>% arrange(-AVE_inner) %>%
   mutate(n = row_number()) %>%
