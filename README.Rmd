@@ -2,7 +2,7 @@
 output: github_document
 ---
 
-[![DOI](https://zenodo.org/badge/198424052.svg)](https://zenodo.org/badge/latestdoi/198424052)
+[![DOI](https://zenodo.org/badge/141162079.svg)](https://zenodo.org/badge/latestdoi/141162079)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
