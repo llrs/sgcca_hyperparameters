@@ -44,7 +44,7 @@ comm0 <- ggplot(tau, aes(y, AVE_inner)) +
 plot1 <- comm0 +
   geom_point(aes(fill = CGH, color = CGH)) +
   geom_point(data = . %>% filter(GE == 0.503293099215374 & CGH == 0.636243186088126), col = "red") +
-  guides(color = FALSE, fill = FALSE) +
+  guides(color = "none", fill = "none") +
   labs(title = "Colored by tau of CGH")
 plot2 <- comm0 +
   geom_point(aes(color = GE, fill = GE)) +

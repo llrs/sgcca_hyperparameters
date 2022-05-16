@@ -95,6 +95,11 @@ figure3 <- df %>%
   scale_x_continuous(breaks = seq(-1, 0.75, by = 0.25))
 ggsave(plot = figure3, filename = "Figures/Figure3.png", width = 170,
        units = "mm", dpi = 300)
+
+ggsave(figure3 +
+  labs(title = "SGCCA in multiple models"),
+  filename = "~/Documents/projects/thesis/images/pugets_models.png", width = 170,
+  units = "mm", dpi = 300)
 df %>%
   filter(Component == "comp1") %>%
   ggplot() +
